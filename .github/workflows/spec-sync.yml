@@ -1,0 +1,105 @@
+name: Spec sync
+
+# Keeps openapi.json in step with the API. When the published contract changes, a pull request
+# brings the new copy and the regenerated sources of both SDKs, and CI on it shows what the change
+# needs, such as a method for a new operation.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      source:
+        description: API to read the contract from
+        type: choice
+        options: [production, staging]
+        default: production
+
+permissions: {}
+
+concurrency:
+  group: spec-sync-${{ inputs.source || 'production' }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync the API contract
+    if: github.repository == 'extralt-ai/extralt-sdks'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read # to find the open sync pull request
+    env:
+      SOURCE: ${{ inputs.source || 'production' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+        with:
+          just-version: 1.50.0
+
+      # A sync pull request that is still open is continued, so commits added to it are kept.
+      - name: Continue the open sync pull request
+        id: open
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch="spec-sync/$SOURCE"
+          if [ -n "$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state open --json number --jq '.[].number')" ]; then
+            git fetch --depth 1 origin "$branch"
+            git switch --detach FETCH_HEAD
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - run: bun install --frozen-lockfile
+        working-directory: typescript
+      - run: just spec "$SOURCE"
+
+      - name: Look for changes
+        id: changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The App's token, unlike GITHUB_TOKEN, lets CI run on the pull request.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        if: steps.changes.outputs.found == 'true'
+        id: app
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Open or update the pull request
+        if: steps.changes.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          CONTINUED: ${{ steps.open.outputs.found }}
+        run: |
+          branch="spec-sync/$SOURCE"
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git config user.name "extralt-bot[bot]"
+          git config user.email "340179801+extralt-bot[bot]@users.noreply.github.com"
+          git add --all
+          git commit --quiet --message "feat: sync the API contract from $SOURCE"
+          if [ "$CONTINUED" = "true" ]; then
+            git push "$remote" "HEAD:refs/heads/$branch"
+            exit 0
+          fi
+          # No pull request is open, so a branch left by a closed one is replaced.
+          git push --force "$remote" "HEAD:refs/heads/$branch"
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+            --title "feat: sync the API contract" \
+            --body "The API contract read from $SOURCE differs from \`openapi.json\`. This brings the new copy and the regenerated sources of both SDKs.
+
+          - A failing coverage test means the API gained an operation that needs an SDK method. Add it to this branch; later syncs keep commits added here.
+          - Retitle to \`docs:\` when only descriptions or examples changed, so that it is released as a patch.
+          - A contract read from staging must not be merged before production serves it."
