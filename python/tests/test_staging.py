@@ -1,8 +1,8 @@
-"""End-to-end flows against the staging API. Run with `uv run pytest -m staging`.
+"""End-to-end reads against the staging API. Run with `uv run pytest -m staging`.
 
-They need EXTRALT_API_KEY for a staging organization with at least one completed Robot. Each run
-creates one Run with a budget of one Capture, enriches it, and creates one Schedule that is deleted
-before it can run. Explore is only read, scoped by the first Store with a known currency.
+They need EXTRALT_API_KEY for a staging organization that already has Robots, Runs with Captures
+and Enrichments, and skip where it has none. They only read. Never add a call here that creates,
+changes or deletes anything: the mocked tests cover those requests.
 """
 
 from __future__ import annotations
@@ -10,12 +10,10 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
-import uuid
 
 import pytest
 
-from extralt import Extralt, NotFoundError
-from extralt.types import Robot
+from extralt import Extralt
 
 pytestmark = pytest.mark.staging
 
@@ -29,66 +27,55 @@ def client() -> Extralt:
     return Extralt(base_url=BASE_URL)
 
 
-@pytest.fixture(scope="module")
-def robot(client: Extralt) -> Robot:
-    for candidate in client.extract.robots.list(limit=100):
-        if candidate.status == "completed":
-            return candidate
-    pytest.skip("the staging organization has no completed Robot")
+def test_reads_robots(client: Extralt) -> None:
+    robots = client.extract.robots.list(limit=5).first_page().data
+    if not robots:
+        pytest.skip("the staging organization has no Robot")
+    for robot in robots:
+        assert client.extract.robots.get(robot.id).id == robot.id
 
 
-def test_reads_robots_and_runs(client: Extralt, robot: Robot) -> None:
-    assert client.extract.robots.get(robot.id).id == robot.id
-    first = client.extract.runs.list(limit=5).first_page()
-    for run in first.data:
+def test_reads_schedules(client: Extralt) -> None:
+    schedules = client.extract.schedules.list(limit=5).first_page().data
+    if not schedules:
+        pytest.skip("the staging organization has no Schedule")
+    for schedule in schedules:
+        assert client.extract.schedules.get(schedule.id).id == schedule.id
+
+
+def test_reads_runs_and_their_captures(client: Extralt) -> None:
+    runs = client.extract.runs.list(limit=50).first_page().data
+    for run in runs[:5]:
         assert client.extract.runs.get(run.id).id == run.id
 
-
-def test_schedule_lifecycle(client: Extralt, robot: Robot) -> None:
-    schedule = client.extract.schedules.create(
-        robot_id=robot.id,
-        cadence={"interval_amount": 1, "interval_unit": "month"},
-        name=f"SDK smoke {uuid.uuid4().hex[:8]}",
-        budget=1,
-    )
-    try:
-        assert schedule.enabled
-        assert client.extract.schedules.get(schedule.id).name == schedule.name
-        updated = client.extract.schedules.update(
-            schedule.id, budget="unlimited", auto_enrich=False
-        )
-        assert updated.budget is None
-        assert client.extract.schedules.pause(schedule.id).enabled is False
-        assert client.extract.schedules.resume(schedule.id).enabled is True
-    finally:
-        client.extract.schedules.delete(schedule.id)
-    with pytest.raises(NotFoundError):
-        client.extract.schedules.get(schedule.id)
-
-
-def test_run_to_captures(client: Extralt, robot: Robot) -> None:
-    started = client.extract.runs.create(robot_id=robot.id, budget=1, auto_enrich=False, wait=False)
-    assert started.finished is False
-    run = client.extract.runs.wait(started.id, timeout=900)
-    assert run.status in {"completed", "stopped"}
+    # The smallest finished Run keeps the export short.
+    with_captures = [run for run in runs if run.finished and run.extracted > 0]
+    if not with_captures:
+        pytest.skip("the staging organization has no finished Run with Captures")
+    run = min(with_captures, key=lambda run: run.extracted)
 
     count = client.extract.captures.count(run_id=run.id)
-    captures = list(client.extract.captures.list(run_id=run.id, limit=10))
-    assert len(captures) == count
+    page = client.extract.captures.list(run_id=run.id, limit=10).first_page()
+    assert len(page.data) == min(count, 10)
     with client.extract.captures.export(run_id=run.id, format="jsonl") as export:
         lines = b"".join(export.iter_bytes()).splitlines()
     assert len(lines) == count
 
-    if count == 0:
-        pytest.skip("the Run produced no Capture to enrich")
-    enrichment = client.enrich.enrichments.start(
-        source={"kind": "run", "id": run.id}, budget=1, timeout=900
-    )
-    assert enrichment.finished
-    items = list(client.enrich.items.list(enrichment_id=enrichment.id))
-    for item in items[:1]:
-        detail = client.enrich.items.get(item.id, enrichment_id=enrichment.id)
-        assert detail.id == item.id
+
+def test_reads_enrichments_and_their_items(client: Extralt) -> None:
+    enrichments = client.enrich.enrichments.list(limit=20).first_page().data
+    if not enrichments:
+        pytest.skip("the staging organization has no Enrichment")
+    for enrichment in enrichments[:5]:
+        assert client.enrich.enrichments.get(enrichment.id).id == enrichment.id
+
+    for enrichment in enrichments:
+        items = client.enrich.items.list(enrichment_id=enrichment.id, limit=5).first_page().data
+        if items:
+            detail = client.enrich.items.get(items[0].id, enrichment_id=enrichment.id)
+            assert detail.id == items[0].id
+            return
+    pytest.skip("no recent Enrichment in the staging organization has Items")
 
 
 def test_reads_explore(client: Extralt) -> None:

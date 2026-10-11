@@ -52,7 +52,9 @@ just spec https://api.extralt.com/api-docs/openapi.json     # another document, 
 ## Staging tests
 
 `just test-staging` runs both SDKs end to end against the staging API. It needs `EXTRALT_API_KEY`
-set to a staging key and creates real resources there, so it is not part of `just check`.
+set to a staging key, so it is not part of `just check`. These tests only read what the
+organization already has. They never create, change or delete anything; the mocked tests cover
+those requests.
 
 ## Pull requests
 

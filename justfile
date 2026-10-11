@@ -52,8 +52,7 @@ spec source="":
 	uv run scripts/sync_spec.py {{source}}
 	just generate
 
-# Run both SDKs end to end against the staging API. Needs EXTRALT_API_KEY, and creates real
-# resources there.
+# Run both SDKs end to end against the staging API. Needs EXTRALT_API_KEY. The tests only read.
 test-staging:
 	cd python && uv run pytest -m staging
 	cd typescript && bun run test:staging

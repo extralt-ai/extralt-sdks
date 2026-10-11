@@ -1,11 +1,11 @@
 /**
- * End-to-end flows against the staging API: `bun run test:staging` with EXTRALT_API_KEY for a
- * staging organization that has at least one completed Robot. Each run creates one Run with a
- * budget of one Capture, enriches it, and one Schedule that is deleted before it can run. Explore is
- * only read, scoped by the first Store with a known currency.
+ * End-to-end reads against the staging API: `bun run test:staging` with EXTRALT_API_KEY for a
+ * staging organization that already has Robots, Runs with Captures and Enrichments. Tests skip
+ * where it has none. They only read. Never add a call here that creates, changes or deletes
+ * anything: the mocked tests cover those requests.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
-import { Extralt, NotFoundError, type Robot } from '../src/index.js';
+import { Extralt } from '../src/index.js';
 
 const enabled = process.env.EXTRALT_STAGING === '1' && Boolean(process.env.EXTRALT_API_KEY);
 
@@ -13,74 +13,63 @@ describe.runIf(enabled)('staging', () => {
   const client = new Extralt({
     baseURL: process.env.EXTRALT_STAGING_URL ?? 'https://api.extralt.dev',
   });
-  let robot: Robot;
 
   beforeAll(async () => {
-    for await (const candidate of client.extract.robots.list({ limit: 100 })) {
-      if (candidate.status === 'completed') {
-        robot = candidate;
-        return;
-      }
-    }
-    throw new Error('the staging organization has no completed Robot');
+    await client.extract.robots.list({ limit: 1 }).firstPage();
   }, 60_000); // the first request can wake an idle staging API
 
-  it('reads Robots and Runs', async () => {
-    expect((await client.extract.robots.get(robot.id)).id).toBe(robot.id);
-    const page = await client.extract.runs.list({ limit: 5 }).firstPage();
-    for (const run of page.data) expect((await client.extract.runs.get(run.id)).id).toBe(run.id);
-  });
-
-  it('runs a Schedule lifecycle', async () => {
-    const schedule = await client.extract.schedules.create({
-      robot_id: robot.id,
-      cadence: { interval_amount: 1, interval_unit: 'month' },
-      name: `SDK smoke ${crypto.randomUUID().slice(0, 8)}`,
-      budget: 1,
-    });
-    try {
-      expect(schedule.enabled).toBe(true);
-      const updated = await client.extract.schedules.update(schedule.id, {
-        budget: 'unlimited',
-        auto_enrich: false,
-      });
-      expect(updated.budget ?? null).toBeNull();
-      expect((await client.extract.schedules.pause(schedule.id)).enabled).toBe(false);
-      expect((await client.extract.schedules.resume(schedule.id)).enabled).toBe(true);
-    } finally {
-      await client.extract.schedules.delete(schedule.id);
+  it('reads Robots', async ({ skip }) => {
+    const page = await client.extract.robots.list({ limit: 5 }).firstPage();
+    if (page.data.length === 0) skip('the staging organization has no Robot');
+    for (const robot of page.data) {
+      expect((await client.extract.robots.get(robot.id)).id).toBe(robot.id);
     }
-    await expect(client.extract.schedules.get(schedule.id)).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it('runs a Robot into Captures and Items', { timeout: 1_800_000 }, async () => {
-    const started = await client.extract.runs.create(
-      { robot_id: robot.id, budget: 1, auto_enrich: false },
-      { wait: false },
-    );
-    expect(started.finished).toBe(false);
-    const run = await client.extract.runs.wait(started.id, { timeout: 840_000 });
-    expect(['completed', 'stopped']).toContain(run.status);
+  it('reads Schedules', async ({ skip }) => {
+    const page = await client.extract.schedules.list({ limit: 5 }).firstPage();
+    if (page.data.length === 0) skip('the staging organization has no Schedule');
+    for (const schedule of page.data) {
+      expect((await client.extract.schedules.get(schedule.id)).id).toBe(schedule.id);
+    }
+  });
+
+  it('reads Runs and their Captures', { timeout: 300_000 }, async ({ skip }) => {
+    const runs = (await client.extract.runs.list({ limit: 50 }).firstPage()).data;
+    for (const run of runs.slice(0, 5)) {
+      expect((await client.extract.runs.get(run.id)).id).toBe(run.id);
+    }
+
+    // The smallest finished Run keeps the export short.
+    const [run] = runs
+      .filter((run) => run.finished && run.extracted > 0)
+      .sort((a, b) => a.extracted - b.extracted);
+    if (!run) return skip('the staging organization has no finished Run with Captures');
 
     const count = await client.extract.captures.count({ run_id: run.id });
-    let listed = 0;
-    for await (const _ of client.extract.captures.list({ run_id: run.id, limit: 10 })) listed += 1;
-    expect(listed).toBe(count);
+    const page = await client.extract.captures.list({ run_id: run.id, limit: 10 }).firstPage();
+    expect(page.data).toHaveLength(Math.min(count, 10));
     const exported = await client.extract.captures.export({ run_id: run.id, format: 'jsonl' });
     const lines = (await exported.text()).split('\n').filter(Boolean);
     expect(lines).toHaveLength(count);
-    if (count === 0) return;
+  });
 
-    const enrichment = await client.enrich.enrichments.start(
-      { source: { kind: 'run', id: run.id }, budget: 1 },
-      { timeout: 840_000 },
-    );
-    expect(enrichment.finished).toBe(true);
-    const page = await client.enrich.items.list({ enrichment_id: enrichment.id }).firstPage();
-    for (const item of page.data.slice(0, 1)) {
-      const detail = await client.enrich.items.get(item.id, { enrichment_id: enrichment.id });
-      expect(detail.id).toBe(item.id);
+  it('reads Enrichments and their Items', { timeout: 300_000 }, async ({ skip }) => {
+    const enrichments = (await client.enrich.enrichments.list({ limit: 20 }).firstPage()).data;
+    if (enrichments.length === 0) skip('the staging organization has no Enrichment');
+    for (const enrichment of enrichments.slice(0, 5)) {
+      expect((await client.enrich.enrichments.get(enrichment.id)).id).toBe(enrichment.id);
     }
+
+    for (const enrichment of enrichments) {
+      const scope = { enrichment_id: enrichment.id };
+      const [item] = (await client.enrich.items.list({ ...scope, limit: 5 }).firstPage()).data;
+      if (item) {
+        expect((await client.enrich.items.get(item.id, scope)).id).toBe(item.id);
+        return;
+      }
+    }
+    skip('no recent Enrichment in the staging organization has Items');
   });
 
   it('reads Explore', { timeout: 300_000 }, async () => {

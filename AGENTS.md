@@ -36,5 +36,6 @@ clients for the public Extralt API v1, described by `openapi.json`.
 - The TypeScript package exports the API's schemas by name and none of the type generator's own
   types, so that the generator can be replaced without a breaking change. TypeScript stays on 5.9
   while the generator, `openapi-typescript`, needs the compiler API that TypeScript 7 removed.
-- README snippets are executed by the tests: keep them runnable. Staging tests (`just test-staging`)
-  mutate real data: they create only cheap resources and clean up only what they created.
+- README snippets are executed by the tests: keep them runnable.
+- Staging tests (`just test-staging`) only read. Never add a call to them that creates, changes or
+  deletes anything; the mocked tests cover those requests.
