@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.0](https://github.com/extralt-ai/extralt-sdks/compare/typescript-v0.0.1...typescript-v0.1.0) (2026-10-11)
+
+
+### Features
+
+* add the Extralt API client ([#7](https://github.com/extralt-ai/extralt-sdks/issues/7)) ([55ab9a9](https://github.com/extralt-ai/extralt-sdks/commit/55ab9a9858f014fa41b2ce73a72e0978258dda6a))
+
+
+### Documentation
+
+* revise the READMEs ([#10](https://github.com/extralt-ai/extralt-sdks/issues/10)) ([1eebb1d](https://github.com/extralt-ai/extralt-sdks/commit/1eebb1de85b64f6c6dc75a2875b514bfcdcdc1a2))
+
 ## 0.0.1 (2026-10-11)
 
 
