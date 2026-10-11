@@ -4,13 +4,17 @@ Usage: uv run scripts/sync_spec.py [SOURCE] [--check]
 
 SOURCE is `production` (the default), `staging`, a URL, a file path or `-` for stdin. The snapshot
 keeps the public `/v1` operations with Bearer API-key auth and production as its server.
-`--check` fails instead of writing when the snapshot differs.
+`--check` fails instead of writing when the snapshot differs. The API's version changes with every
+deploy and is not part of the contract: a document that differs only by it leaves the snapshot as
+it is.
 """
 
 from __future__ import annotations
 
 import json
 import sys
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -30,9 +34,22 @@ def load(source: str) -> dict[str, Any]:
     if source == "-":
         return json.load(sys.stdin)
     if source.startswith(("https://", "http://")):
-        with urllib.request.urlopen(source, timeout=30) as response:
-            return json.load(response)
+        return fetch(source)
     return json.loads(Path(source).read_text())
+
+
+def fetch(url: str, attempts: int = 4) -> dict[str, Any]:
+    """Retries server and network errors: an idle API answers 503 while it starts."""
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+                return json.load(response)
+        except urllib.error.URLError as error:
+            client_error = isinstance(error, urllib.error.HTTPError) and error.code < 500
+            if client_error or attempt == attempts:
+                raise
+            time.sleep(5 * attempt)
+    raise AssertionError("unreachable")
 
 
 def referenced_schemas(value: Any, names: set[str]) -> None:
@@ -86,19 +103,24 @@ def public_document(document: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def contract(document: dict[str, Any]) -> dict[str, Any]:
+    info = {key: value for key, value in document["info"].items() if key != "version"}
+    return {**document, "info": info}
+
+
 def main(arguments: list[str]) -> None:
     check = "--check" in arguments
     sources = [argument for argument in arguments if argument != "--check"]
     if len(sources) > 1:
         raise SystemExit(__doc__)
-    snapshot = json.dumps(public_document(load(sources[0] if sources else DEFAULT_SOURCE)), indent=2, sort_keys=True) + "\n"
+    document = public_document(load(sources[0] if sources else DEFAULT_SOURCE))
 
-    if check:
-        if not SNAPSHOT.exists() or SNAPSHOT.read_text() != snapshot:
-            raise SystemExit("openapi.json is stale; run scripts/sync_spec.py")
+    if SNAPSHOT.exists() and contract(json.loads(SNAPSHOT.read_text())) == contract(document):
         print("openapi.json matches the source document")
         return
-    SNAPSHOT.write_text(snapshot)
+    if check:
+        raise SystemExit("openapi.json is stale; run scripts/sync_spec.py")
+    SNAPSHOT.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n")
     print(f"Wrote {SNAPSHOT.name}")
 
 

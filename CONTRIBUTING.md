@@ -49,7 +49,13 @@ just spec             # from the production API
 just spec staging     # from the staging API
 ```
 
-A URL or a file path works in place of `staging`.
+A URL or a file path works in place of `staging`. The API's version changes with every deploy and
+is not part of the contract, so a document that differs only by it leaves `openapi.json` as it is.
+
+The Spec sync workflow runs `just spec` against production every day and opens a pull request when
+the contract has changed. A failing coverage test on it means the API gained an operation that
+needs an SDK method; add it to that pull request. To prepare for a change that is only on staging,
+run the workflow by hand from the Actions tab with `staging` as its source.
 
 ## Staging tests
 
