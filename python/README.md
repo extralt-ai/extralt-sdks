@@ -1,13 +1,21 @@
 # Extralt Python SDK
 
-The Python client for the [Extralt API](https://extralt.com/docs). It is typed, async-first with
-an identical synchronous client, and retries safely on its own.
+The Python client for the [Extralt API](https://extralt.com/docs). It is typed, has a synchronous
+and an asynchronous client with the same methods, and retries safely on its own.
 
-Requires Python 3.11+.
+[Documentation](https://extralt.com/docs/using-the-api/sdks) ·
+[API reference](https://api.extralt.com/docs) ·
+[Changelog](https://github.com/extralt-ai/extralt-sdks/blob/main/python/CHANGELOG.md)
 
 ```bash
 pip install extralt
 ```
+
+It needs Python 3.11 or later and an
+[API key](https://extralt.com/docs/guides/account-setup), which it reads from the
+`EXTRALT_API_KEY` environment variable.
+
+## Usage
 
 ```python
 from extralt import Extralt
@@ -38,15 +46,15 @@ async with AsyncExtralt() as client:
 ## Configuration
 
 ```python
-import httpx
-
 client = Extralt(
     api_key="...",  # defaults to EXTRALT_API_KEY
     timeout=60.0,  # seconds per request
     max_retries=2,
-    http_client=httpx.Client(proxy="http://localhost:3128"),  # proxies, transports, hooks
 )
 ```
+
+To go through a proxy, trust custom certificates or use your own transport, pass an
+`httpx.Client` as `http_client` (an `httpx.AsyncClient` to the asynchronous client).
 
 Set `EXTRALT_LOG=info` to log each job's progress and every retry, or `debug` to add every
 response. You can also configure the `extralt` logger yourself. API keys are never logged.
@@ -60,7 +68,7 @@ for run in client.extract.runs.list():
     ...
 
 page = client.extract.runs.list(limit=50).first_page()
-page.data, page.next_cursor
+print(len(page.data), page.next_cursor)
 
 for page in client.extract.runs.list().pages():
     ...
@@ -99,11 +107,14 @@ finished = client.extract.runs.wait(started.id)
 
 ## Files
 
+An export is a stream: write it to a file, or read it in chunks with `iter_bytes()`. An import
+is streamed from disk.
+
 ```python
 with client.extract.captures.export(run_id=run.id, format="parquet") as export:
     export.write_to("captures.parquet")
 
-imported = client.extract.imports.create("catalog.csv", country="US")  # streamed from disk
+imported = client.extract.imports.create("catalog.csv", country="US")
 ```
 
 ## Explore
@@ -173,7 +184,7 @@ API errors raise a subclass of `APIStatusError` with `status_code`, `code`, `mes
 
 Network failures raise `APIConnectionError` (`APITimeoutError` for timeouts).
 
-Connection errors, 408, 429 and 5xx responses are retried with exponential backoff, honouring
+Connection errors, 408, 429 and 5xx responses are retried with exponential backoff, honoring
 `Retry-After`, but only for operations that are safe to repeat. Creates and restarts send an
 `Idempotency-Key` that every retry reuses, so a retried request never creates a second resource.
 Pass `idempotency_key=` to retry the same logical request yourself.
@@ -182,6 +193,12 @@ Pass `idempotency_key=` to retry the same logical request yourself.
 
 Responses are read without strict validation. Fields and enum values the API adds within v1 stay
 available, as `model_extra` and as plain strings, instead of breaking older SDK versions.
+
+## Versioning
+
+The SDK follows semantic versioning. While it is `0.x`, a minor release can contain breaking
+changes, which the
+[changelog](https://github.com/extralt-ai/extralt-sdks/blob/main/python/CHANGELOG.md) lists.
 
 ## License
 

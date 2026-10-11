@@ -1,6 +1,6 @@
 // The `extralt` module as README snippets see it in readme.test.ts: the real SDK, with a client
 // that answers every request with a spec-shaped response, and the values a reader brings.
-import { type ClientOptions, type Run, Extralt as SdkExtralt } from '../src/index.js';
+import { type ClientOptions, type Robot, type Run, Extralt as SdkExtralt } from '../src/index.js';
 import { example, operations, successResponse } from './spec.js';
 
 export * from '../src/index.js';
@@ -40,7 +40,7 @@ export class Extralt extends SdkExtralt {
   }
 }
 
-export const customFetch: typeof fetch = respond;
 export const variantId = '9007199254740993';
 export const client: Extralt = new Extralt();
+export const robot: Robot = await client.extract.robots.get('robot_1');
 export const run: Run = await client.extract.runs.get('run_1');
