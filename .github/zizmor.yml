@@ -1,0 +1,5 @@
+rules:
+  dependabot-cooldown:
+    config:
+      # Dependabot's default; zizmor would otherwise require seven days.
+      days: 3

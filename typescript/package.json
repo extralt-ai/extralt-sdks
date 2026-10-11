@@ -1,0 +1,44 @@
+{
+  "name": "extralt",
+  "version": "0.0.0",
+  "description": "TypeScript client for the Extralt API",
+  "license": "MIT",
+  "author": "Extralt",
+  "homepage": "https://extralt.com/docs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/extralt-ai/extralt-sdks.git",
+    "directory": "typescript"
+  },
+  "bugs": "https://github.com/extralt-ai/extralt-sdks/issues",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "check": "biome check && tsc --noEmit",
+    "format": "biome check --write",
+    "package:check": "bun run build && publint && attw --pack --profile esm-only"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@biomejs/biome": "^2",
+    "@types/node": "^26.6.4",
+    "publint": "^0.3.25",
+    "tsdown": "^0.23.0",
+    "typescript": "^5.9"
+  }
+}

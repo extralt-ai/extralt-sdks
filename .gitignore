@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.env.*
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+python/dist/
+
+# TypeScript
+node_modules/
+typescript/dist/

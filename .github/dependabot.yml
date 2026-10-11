@@ -1,0 +1,40 @@
+# One grouped PR per ecosystem a week, proposing only versions published at least three days
+# earlier, Dependabot's default, stated so zizmor checks it stays. Security updates aren't delayed.
+# The "chore(deps)" prefix keeps PR titles valid Conventional Commits that release nothing.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: uv
+    directory: /python
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      python:
+        patterns: ["*"]
+
+  - package-ecosystem: bun
+    directory: /typescript
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      typescript:
+        patterns: ["*"]

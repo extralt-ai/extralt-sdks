@@ -1,0 +1,35 @@
+[project]
+name = "extralt"
+version = "0.0.0"
+description = "Python client for the Extralt API"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Extralt" }]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.urls]
+Homepage = "https://extralt.com"
+Documentation = "https://extralt.com/docs"
+Repository = "https://github.com/extralt-ai/extralt-sdks"
+Issues = "https://github.com/extralt-ai/extralt-sdks/issues"
+Changelog = "https://github.com/extralt-ai/extralt-sdks/blob/main/python/CHANGELOG.md"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.13",
+    "ty>=0.0.85",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.20,<0.13"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "ASYNC", "PT"]
+# Methods take a per-request `timeout` like httpx's, rather than leaving callers to cancel scopes.
+ignore = ["ASYNC109"]
