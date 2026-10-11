@@ -48,6 +48,6 @@
     "@types/node": "^26.6.4",
     "publint": "^0.3.25",
     "tsdown": "^0.23.0",
-    "typescript": "^5.9"
+    "typescript": "^7.0"
   }
 }
