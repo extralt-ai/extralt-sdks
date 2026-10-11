@@ -8,7 +8,12 @@ license-files = ["LICENSE"]
 authors = [{ name = "Extralt" }]
 keywords = ["extralt", "api", "sdk", "ecommerce", "web-scraping", "product-data", "price-monitoring"]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "anyio>=4.4,<5",
+    "httpx>=0.27,<1",
+    "pydantic>=2.7,<3",
+    "typing-extensions>=4.12",
+]
 
 [project.urls]
 Homepage = "https://extralt.com"
@@ -19,8 +24,12 @@ Changelog = "https://github.com/extralt-ai/extralt-sdks/blob/main/python/CHANGEL
 
 [dependency-groups]
 dev = [
+    "datamodel-code-generator[ruff]>=0.83",
+    "jsonschema>=4.23",
+    "pytest>=8.3",
     "ruff>=0.13",
     "ty>=0.0.85",
+    "unasync>=0.6",
 ]
 
 [build-system]
@@ -29,8 +38,18 @@ build-backend = "uv_build"
 
 [tool.ruff]
 line-length = 100
+extend-exclude = ["src/extralt/types.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "ASYNC", "PT"]
 # Methods take a per-request `timeout` like httpx's, rather than leaving callers to cancel scopes.
 ignore = ["ASYNC109"]
+
+[tool.ruff.lint.per-file-ignores]
+# Rewritten from async generators, which cannot use `yield from`.
+"**/_sync/*.py" = ["UP028"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["staging: calls the staging API with EXTRALT_API_KEY"]
+addopts = "-m 'not staging'"

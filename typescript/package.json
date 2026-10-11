@@ -37,17 +37,26 @@
     "node": ">=22"
   },
   "scripts": {
+    "generate": "bun scripts/generate.ts",
     "build": "tsdown",
     "check": "biome check && tsc --noEmit",
     "format": "biome check --write",
-    "package:check": "bun run build && publint && attw --pack --profile esm-only"
+    "test": "vitest run --exclude test/staging.test.ts",
+    "test:staging": "EXTRALT_STAGING=1 vitest run test/staging.test.ts",
+    "package:check": "bun run build && publint && attw --pack --profile esm-only",
+    "runtimes": "bun run build && node test/runtime/run.js && npm exec --yes --package=node@22 -- node test/runtime/run.js && bun test/runtime/run.js && deno run test/runtime/run.js && node test/runtime/workers.js"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
     "@biomejs/biome": "^2",
     "@types/node": "^26.6.4",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "miniflare": "4.20260730.0",
+    "openapi-typescript": "^7",
     "publint": "^0.3.25",
     "tsdown": "^0.23.0",
-    "typescript": "^5.9"
+    "typescript": "^5.9",
+    "vitest": "^5"
   }
 }

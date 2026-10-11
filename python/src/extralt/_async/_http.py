@@ -1,0 +1,112 @@
+from __future__ import annotations
+
+import uuid
+from collections.abc import AsyncIterable, Callable, Mapping
+from typing import Any
+
+import httpx
+from anyio import sleep
+
+from .._base import (
+    build_path,
+    log,
+    query_params,
+    retries_status,
+    retries_transport_error,
+    retry_delay,
+)
+from .._exceptions import APIConnectionError, APITimeoutError, status_error
+from .._operations import OPERATIONS
+
+Content = bytes | Callable[[], AsyncIterable[bytes]] | None
+
+
+class AsyncHTTP:
+    """Sends documented operations with authentication, retries and idempotency keys."""
+
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        headers: Mapping[str, str],
+        timeout: float,
+        max_retries: int,
+        http_client: httpx.AsyncClient | None,
+    ) -> None:
+        self.base_url = base_url
+        self.headers = dict(headers)
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self._client = http_client or httpx.AsyncClient(timeout=timeout)
+        self._owns_client = http_client is None
+
+    async def request(
+        self,
+        operation_id: str,
+        *,
+        path_params: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        json: Any = None,
+        content: Content = None,
+        headers: Mapping[str, str] | None = None,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        stream: bool = False,
+    ) -> httpx.Response:
+        operation = OPERATIONS[operation_id]
+        url = self.base_url + build_path(operation, path_params or {})
+        request_headers = {**self.headers, **(headers or {})}
+        if operation.idempotency_key:
+            request_headers["Idempotency-Key"] = idempotency_key or str(uuid.uuid4())
+
+        attempt = 0
+        while True:
+            request = self._client.build_request(
+                operation.method,
+                url,
+                params=query_params(params),
+                json=json,
+                content=content if content is None or isinstance(content, bytes) else content(),
+                headers=request_headers,
+                timeout=timeout if timeout is not None else self.timeout,
+            )
+            try:
+                response = await self._client.send(request, stream=stream)
+            except httpx.TransportError as error:
+                if attempt < self.max_retries and retries_transport_error(operation, error):
+                    delay = retry_delay(attempt, None)
+                    log.info("Retrying %s after %s in %.2fs", operation_id, error, delay)
+                    await sleep(delay)
+                    attempt += 1
+                    continue
+                if isinstance(error, httpx.TimeoutException):
+                    raise APITimeoutError(request=request) from error
+                raise APIConnectionError(str(error), request=request) from error
+
+            log.debug(
+                "%s %s -> %s (request %s)",
+                operation.method,
+                request.url,
+                response.status_code,
+                response.headers.get("x-request-id") or "none",
+            )
+            if response.is_success:
+                return response
+            if attempt < self.max_retries and retries_status(operation, response.status_code):
+                delay = retry_delay(attempt, response)
+                await response.aclose()
+                log.info(
+                    "Retrying %s after HTTP %s in %.2fs",
+                    operation_id,
+                    response.status_code,
+                    delay,
+                )
+                await sleep(delay)
+                attempt += 1
+                continue
+            await response.aread()
+            raise status_error(response)
+
+    async def aclose(self) -> None:
+        if self._owns_client:
+            await self._client.aclose()

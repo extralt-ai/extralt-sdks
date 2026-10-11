@@ -41,6 +41,10 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
+      # The built package is run on Deno too; Node.js 22 and workerd come from npm.
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
       - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
         with:
           just-version: 1.50.0
