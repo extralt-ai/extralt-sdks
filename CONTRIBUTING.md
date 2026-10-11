@@ -62,10 +62,11 @@ those requests.
 
 Pull requests are squash-merged, so the PR title becomes the commit on `main`. Titles follow
 [Conventional Commits](https://www.conventionalcommits.org/), scoped to the package they change:
-`feat(python): ...`, `fix(typescript): ...`. `feat`, `fix`, `perf` and `revert` go into the next
-release's changelog and set its version: before `1.0`, a `feat` or a breaking change (`!` after the
-type) makes it a minor release, anything else a patch. `chore`, `docs`, `ci`, `test`, `refactor` and
-`build` are left out of the changelog and don't call for a release on their own.
+`feat(python): ...`, `fix(typescript): ...`. `feat`, `fix`, `perf`, `revert` and `docs` go into the
+next release's changelog and call for a release of the package they change: before `1.0`, a `feat`
+or a breaking change (`!` after the type) makes it a minor release, anything else a patch. `chore`,
+`ci`, `test`, `refactor`, `build` and `style` are left out of the changelog and don't call for a
+release on their own.
 
 ## Releases
 
