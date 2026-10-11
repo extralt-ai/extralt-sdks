@@ -27,7 +27,7 @@ function snippetModule(snippet: string): string {
     ...imports,
     `import * as reader from '${CLIENT}';`,
     '{',
-    'const { Extralt, client, customFetch, run, variantId } = reader;',
+    'const { Extralt, client, robot, run, variantId } = reader;',
     '{',
     ...body,
     '}',
