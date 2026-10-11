@@ -38,3 +38,8 @@ updates:
     groups:
       typescript:
         patterns: ["*"]
+    # The SDK's type generator, openapi-typescript, needs the compiler API that TypeScript 7
+    # removed. Drop this once the generator runs on the current TypeScript.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
