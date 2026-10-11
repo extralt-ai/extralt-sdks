@@ -41,13 +41,15 @@ bun run runtimes                  # the build on Node.js 22 and current, Bun, De
 ## The API contract
 
 `openapi.json` is the public `/v1` API document and the SDKs' only input: types, the operation
-tables and the contract tests all derive from it. It is never edited by hand. To refresh it from a
-published API document and regenerate both SDKs:
+tables and the contract tests all derive from it. It is never edited by hand. To refresh it from
+the API and regenerate both SDKs:
 
 ```bash
-just spec                                                   # the staging API
-just spec https://api.extralt.com/api-docs/openapi.json     # another document, or a file
+just spec             # from the production API
+just spec staging     # from the staging API
 ```
+
+A URL or a file path works in place of `staging`.
 
 ## Staging tests
 

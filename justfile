@@ -8,8 +8,7 @@ default:
 # Run every check CI runs.
 check: check-python check-typescript check-workflows
 
-# Python: lockfile, generated sources, formatting, lint, types, the tests on every supported Python
-# and at the dependency floors, and the built distributions.
+# Python: lockfile, generated sources, lint, types, tests on 3.11 to 3.14 and at the dependency floors, built package.
 [working-directory: "python"]
 check-python:
 	uv lock --check
@@ -21,8 +20,7 @@ check-python:
 	uv run --isolated --python 3.11 --resolution lowest-direct pytest -q
 	uv run scripts/check_package.py
 
-# TypeScript: lockfile, generated sources, Biome, types, tests, the built package and the runtimes
-# it supports (Node.js 22 and current, Bun, Deno and Cloudflare Workers).
+# TypeScript: lockfile, generated sources, Biome, types, tests, built package on Node.js, Bun, Deno and Workers.
 [working-directory: "typescript"]
 check-typescript:
 	bun install --frozen-lockfile
@@ -46,9 +44,8 @@ generate:
 	cd python && uv run scripts/generate.py
 	cd typescript && bun run generate
 
-# Refresh openapi.json from an API document (a URL or a file; staging when omitted), then
-# regenerate both SDKs.
-spec source="":
+# Refresh openapi.json from the production API and regenerate both SDKs; `just spec staging` reads staging instead.
+spec source="production":
 	uv run scripts/sync_spec.py {{source}}
 	just generate
 

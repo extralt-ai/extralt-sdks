@@ -2,7 +2,7 @@
 
 Usage: uv run scripts/sync_spec.py [SOURCE] [--check]
 
-SOURCE is a URL, a file path or `-` for stdin; it defaults to the staging document. The snapshot
+SOURCE is `production` (the default), `staging`, a URL, a file path or `-` for stdin. The snapshot
 keeps the public `/v1` operations with Bearer API-key auth and production as its server.
 `--check` fails instead of writing when the snapshot differs.
 """
@@ -15,13 +15,18 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-DEFAULT_SOURCE = "https://api.extralt.dev/api-docs/openapi.json"
+SOURCES = {
+    "production": "https://api.extralt.com/api-docs/openapi.json",
+    "staging": "https://api.extralt.dev/api-docs/openapi.json",
+}
+DEFAULT_SOURCE = "production"
 PRODUCTION_SERVER = "https://api.extralt.com"
 SNAPSHOT = Path(__file__).resolve().parent.parent / "openapi.json"
 METHODS = ("get", "put", "post", "delete", "patch", "head", "options", "trace")
 
 
 def load(source: str) -> dict[str, Any]:
+    source = SOURCES.get(source, source)
     if source == "-":
         return json.load(sys.stdin)
     if source.startswith(("https://", "http://")):
