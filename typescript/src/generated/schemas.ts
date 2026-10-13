@@ -152,4 +152,10 @@ export type {
   VariantHistoryScope,
   VariantPricePoint,
   VariantPriceSeries,
+  Webhook,
+  WebhookCreateParams,
+  WebhookEventType,
+  WebhookList,
+  WebhookTestResult,
+  WebhookWithSecret,
 } from './openapi.js';

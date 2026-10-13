@@ -50,4 +50,9 @@ export const OPERATIONS: { readonly [K in keyof operations]: Operation } = {
   run_query: { method: 'POST', path: '/v1/query', idempotent: true, idempotencyKey: false },
   export_query: { method: 'POST', path: '/v1/query/export', idempotent: true, idempotencyKey: false },
   get_query_model: { method: 'GET', path: '/v1/query/model', idempotent: true, idempotencyKey: false },
+  list_webhooks: { method: 'GET', path: '/v1/webhooks', idempotent: true, idempotencyKey: false },
+  create_webhook: { method: 'POST', path: '/v1/webhooks', idempotent: true, idempotencyKey: true },
+  get_webhook: { method: 'GET', path: '/v1/webhooks/{id}', idempotent: true, idempotencyKey: false },
+  delete_webhook: { method: 'DELETE', path: '/v1/webhooks/{id}', idempotent: true, idempotencyKey: false },
+  test_webhook: { method: 'POST', path: '/v1/webhooks/{id}/test', idempotent: false, idempotencyKey: false },
 };
