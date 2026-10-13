@@ -23,10 +23,14 @@ export interface RunWebhookEvent {
   data: Run;
 }
 
+/**
+ * `enrichment.changes` summarizes what the Enrichment found in `data.changes`: price decreases and
+ * increases, stock changes, Listings added and removed, and new lows.
+ */
 export interface EnrichmentWebhookEvent {
   /** Stable across retries of the same event to the same endpoint: deduplicate on it. */
   id: string;
-  type: 'enrichment.completed' | 'enrichment.stopped' | 'enrichment.failed';
+  type: 'enrichment.completed' | 'enrichment.stopped' | 'enrichment.failed' | 'enrichment.changes';
   created_at: string;
   data: Enrichment;
 }

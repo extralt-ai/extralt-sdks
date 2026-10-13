@@ -210,8 +210,9 @@ async function handle(request: Request, secret: string): Promise<Response> {
 ```
 
 Answer with a 2xx status within 10 seconds; anything else is retried for about a day and a half.
-Events arrive at least once and in no guaranteed order, so deduplicate on `event.id`. New event
-types are added within v1: ignore a `type` you do not handle.
+Events arrive at least once and in no guaranteed order, so deduplicate on `event.id`. `enrichment.changes`
+summarizes what an Enrichment found in `event.data.changes`. New event types are added within
+v1: ignore a `type` you do not handle.
 
 ## Errors and retries
 
