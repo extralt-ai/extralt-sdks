@@ -12,6 +12,7 @@ from .resources.enrich import AsyncEnrich
 from .resources.explore import AsyncExplore
 from .resources.extract import AsyncExtract
 from .resources.query import AsyncQuery
+from .resources.webhooks import AsyncWebhooks
 
 
 class AsyncExtralt:
@@ -45,6 +46,7 @@ class AsyncExtralt:
         self.enrich = AsyncEnrich(self._http)
         self.explore = AsyncExplore(self._http)
         self.query = AsyncQuery(self._http)
+        self.webhooks = AsyncWebhooks(self._http)
 
     async def aclose(self) -> None:
         await self._http.aclose()

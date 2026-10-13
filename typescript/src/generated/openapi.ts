@@ -780,6 +780,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Webhooks
+         * @description List the organization's webhooks, at most 20 unless the limit was raised.
+         */
+        get: operations["list_webhooks"];
+        put?: never;
+        /**
+         * Create a Webhook
+         * @description Register an HTTPS endpoint for the organization's events. Events are
+         *     signed with [Standard Webhooks](https://www.standardwebhooks.com/) using the
+         *     returned `secret`, delivered at least once and in no guaranteed order.
+         */
+        post: operations["create_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/webhooks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a Webhook */
+        get: operations["get_webhook"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a Webhook
+         * @description Delete the endpoint and its delivery history. Events already being retried
+         *     are not sent again.
+         */
+        delete: operations["delete_webhook"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/webhooks/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a test event
+         * @description Send a `webhook.test` event to the endpoint, whatever event types it
+         *     subscribes to. It is signed like any other event but sent only once, without
+         *     retries.
+         */
+        post: operations["test_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3592,6 +3662,98 @@ export interface components {
             points: components["schemas"]["VariantPricePoint"][];
             scope: components["schemas"]["VariantHistoryScope"];
         };
+        /**
+         * @description An HTTPS endpoint that receives the organization's events, signed with
+         *     Standard Webhooks.
+         */
+        Webhook: {
+            /**
+             * Format: date-time
+             * @example 2026-09-28T08:14:03Z
+             */
+            created_at: string;
+            /** @example Price alerts workflow */
+            description?: string | null;
+            /**
+             * @description Whether events are sent. An endpoint whose deliveries keep failing is
+             *     disabled; it is enabled again from the dashboard.
+             */
+            enabled: boolean;
+            /**
+             * @description The event types sent to this endpoint, or `null` for every event type.
+             *     Typed as strings because new event types are added over time.
+             * @example [
+             *       "run.completed",
+             *       "run.failed"
+             *     ]
+             */
+            event_types?: string[] | null;
+            /** @example pn74h2q9x8c3v1m6z5t0r7wbk2f8djsa */
+            id: string;
+            /** @example https://hooks.example.com/extralt */
+            url: string;
+        };
+        WebhookCreateParams: {
+            /** @example Price alerts workflow */
+            description?: string | null;
+            /**
+             * @description The events to send. Omit to receive every event type, including types
+             *     added later.
+             */
+            event_types?: components["schemas"]["WebhookEventType"][] | null;
+            /**
+             * @description The HTTPS URL events are POSTed to. IP addresses and local host names
+             *     are refused.
+             * @example https://hooks.example.com/extralt
+             */
+            url: string;
+        };
+        /**
+         * @description An event an endpoint can subscribe to. `webhook.test` is sent on request
+         *     to any endpoint and cannot be subscribed to.
+         * @enum {string}
+         */
+        WebhookEventType: "robot.completed" | "robot.failed" | "run.completed" | "run.stopped" | "run.failed" | "run.enrichment_skipped" | "enrichment.completed" | "enrichment.stopped" | "enrichment.failed" | "import.completed" | "import.failed";
+        WebhookList: {
+            data: components["schemas"]["Webhook"][];
+        };
+        WebhookTestResult: {
+            /**
+             * @description The `id` of the `webhook.test` event, as sent in its body and in the
+             *     `webhook-id` header.
+             * @example evt_jh71x4q9c2v8m3z6t5r0n9wbf2p7akdq
+             */
+            event_id: string;
+        };
+        /** @description A new endpoint with the secret its events are signed with. */
+        WebhookWithSecret: {
+            /**
+             * Format: date-time
+             * @example 2026-09-28T08:14:03Z
+             */
+            created_at: string;
+            /** @example Price alerts workflow */
+            description?: string | null;
+            enabled: boolean;
+            /**
+             * @description The event types sent to this endpoint, or `null` for every event type.
+             * @example [
+             *       "run.completed",
+             *       "run.failed"
+             *     ]
+             */
+            event_types?: string[] | null;
+            /** @example pn74h2q9x8c3v1m6z5t0r7wbk2f8djsa */
+            id: string;
+            /**
+             * @description The Standard Webhooks signing secret (`whsec_…`). The API returns it
+             *     only here; admins can reveal it again in the dashboard.
+             * @example whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw
+             */
+            secret: string;
+            /** @example https://hooks.example.com/extralt */
+            url: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -3751,6 +3913,12 @@ export type VariantHistoryPoint = components['schemas']['VariantHistoryPoint'];
 export type VariantHistoryScope = components['schemas']['VariantHistoryScope'];
 export type VariantPricePoint = components['schemas']['VariantPricePoint'];
 export type VariantPriceSeries = components['schemas']['VariantPriceSeries'];
+export type Webhook = components['schemas']['Webhook'];
+export type WebhookCreateParams = components['schemas']['WebhookCreateParams'];
+export type WebhookEventType = components['schemas']['WebhookEventType'];
+export type WebhookList = components['schemas']['WebhookList'];
+export type WebhookTestResult = components['schemas']['WebhookTestResult'];
+export type WebhookWithSecret = components['schemas']['WebhookWithSecret'];
 export type $defs = Record<string, never>;
 export interface operations {
     list_enrichments: {
@@ -9809,6 +9977,645 @@ export interface operations {
                 };
             };
             /** @description An unexpected server error occurred */
+            500: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description A required upstream service is unavailable */
+            503: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request exceeded the server time limit */
+            504: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_webhooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The organization's webhooks */
+            200: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookList"];
+                };
+            };
+            /** @description The request is invalid */
+            400: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description The Bearer authentication challenge */
+                    "WWW-Authenticate"?: string;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The credential or organization lacks access to this operation */
+            403: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The organization rate limit was exceeded */
+            429: {
+                headers: {
+                    /** @description Seconds to wait before retrying, when the server can calculate the delay */
+                    "Retry-After"?: number;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description A required upstream service is unavailable */
+            503: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request exceeded the server time limit */
+            504: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_webhook: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Unique key for safely retrying this request */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookCreateParams"];
+            };
+        };
+        responses: {
+            /** @description Webhook created, with its signing secret */
+            201: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookWithSecret"];
+                };
+            };
+            /** @description Invalid URL, description or event types */
+            400: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description The Bearer authentication challenge */
+                    "WWW-Authenticate"?: string;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description An active subscription is required for this operation */
+            402: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The credential or organization lacks access to this operation */
+            403: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The organization has reached its webhook limit, or the idempotency key was used for a different request */
+            409: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request body exceeds the API limit */
+            413: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request body must use application/json */
+            415: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The JSON body does not match the expected schema */
+            422: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The organization rate limit was exceeded */
+            429: {
+                headers: {
+                    /** @description Seconds to wait before retrying, when the server can calculate the delay */
+                    "Retry-After"?: number;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description A required upstream service is unavailable */
+            503: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request exceeded the server time limit */
+            504: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Webhook ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhook details */
+            200: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Webhook"];
+                };
+            };
+            /** @description The request is invalid */
+            400: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description The Bearer authentication challenge */
+                    "WWW-Authenticate"?: string;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The credential or organization lacks access to this operation */
+            403: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Webhook not found */
+            404: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The organization rate limit was exceeded */
+            429: {
+                headers: {
+                    /** @description Seconds to wait before retrying, when the server can calculate the delay */
+                    "Retry-After"?: number;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description A required upstream service is unavailable */
+            503: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request exceeded the server time limit */
+            504: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Webhook ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhook deleted */
+            204: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request is invalid */
+            400: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description The Bearer authentication challenge */
+                    "WWW-Authenticate"?: string;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The credential or organization lacks access to this operation */
+            403: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Webhook not found */
+            404: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The organization rate limit was exceeded */
+            429: {
+                headers: {
+                    /** @description Seconds to wait before retrying, when the server can calculate the delay */
+                    "Retry-After"?: number;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description A required upstream service is unavailable */
+            503: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request exceeded the server time limit */
+            504: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    test_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Webhook ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Test event queued */
+            202: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookTestResult"];
+                };
+            };
+            /** @description The request is invalid */
+            400: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description The Bearer authentication challenge */
+                    "WWW-Authenticate"?: string;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description An active subscription is required for this operation */
+            402: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The credential or organization lacks access to this operation */
+            403: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Webhook not found */
+            404: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The webhook is disabled */
+            409: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The organization rate limit was exceeded */
+            429: {
+                headers: {
+                    /** @description Seconds to wait before retrying, when the server can calculate the delay */
+                    "Retry-After"?: number;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
             500: {
                 headers: {
                     /** @description Request identifier, also returned as error.request_id; include it when contacting support */

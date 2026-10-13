@@ -125,6 +125,16 @@ const CALLS: Record<string, Call> = {
       await c.query.export({ sql: 'SELECT id FROM extralt.listings', format: 'jsonl' })
     ).arrayBuffer(),
   get_query_model: (c) => c.query.model({ entities: ['listings', 'current_offers'] }),
+  create_webhook: (c) =>
+    c.webhooks.create({
+      url: 'https://hooks.example.com/extralt',
+      event_types: ['run.completed', 'run.failed'],
+      description: 'Price alerts workflow',
+    }),
+  list_webhooks: (c) => c.webhooks.list(),
+  get_webhook: (c) => c.webhooks.get('webhook_1'),
+  delete_webhook: (c) => c.webhooks.delete('webhook_1'),
+  test_webhook: (c) => c.webhooks.test('webhook_1'),
 };
 
 function client(operationId: string, future: boolean, sent: Request[] = []): Extralt {

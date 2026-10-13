@@ -19,6 +19,7 @@ export {
   UnprocessableEntityError,
   UnsupportedMediaTypeError,
   WaitTimeoutError,
+  WebhookVerificationError,
 } from './core/errors.js';
 export type { Logger, LogLevel } from './core/log.js';
 export type { Paginator } from './core/pagination.js';
@@ -52,4 +53,17 @@ export type {
   ScheduleUpdateParams,
 } from './resources/extract.js';
 export type { Query, QueryModelParams } from './resources/query.js';
+export type { Webhooks } from './resources/webhooks.js';
 export { VERSION } from './version.js';
+export {
+  type EnrichmentWebhookEvent,
+  type ImportWebhookEvent,
+  type RobotWebhookEvent,
+  type RunWebhookEvent,
+  type TestWebhookEvent,
+  type VerifyWebhookOptions,
+  verifyWebhook,
+  type WebhookEvent,
+  type WebhookHeaders,
+  type WebhookTestData,
+} from './webhooks.js';

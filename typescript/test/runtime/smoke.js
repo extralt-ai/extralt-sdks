@@ -1,5 +1,5 @@
 // Exercises the built package through the Fetch API alone, so every supported runtime runs it.
-import { Extralt, NotFoundError } from '../../dist/index.js';
+import { Extralt, NotFoundError, verifyWebhook } from '../../dist/index.js';
 
 async function respond(request) {
   const { pathname, searchParams } = new URL(request.url);
@@ -22,6 +22,23 @@ async function respond(request) {
   return Response.json(
     { error: { code: 'not_found', message: 'Not found', request_id: 'req_1' } },
     { status: 404 },
+  );
+}
+
+const SECRET = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw';
+
+async function sign(content) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    Uint8Array.from(atob(SECRET.slice('whsec_'.length)), (char) => char.charCodeAt(0)),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  return btoa(
+    String.fromCharCode(
+      ...new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(content))),
+    ),
   );
 }
 
@@ -50,6 +67,20 @@ export async function smoke() {
 
   const exported = await client.extract.captures.export({ run_id: 'run_1', format: 'jsonl' });
   check((await exported.text()) === '{"id":"1"}\n', 'an export must stream its body');
+
+  // Signs and verifies a delivery through each runtime's Web Crypto.
+  const delivery = '{"type":"webhook.test"}';
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const event = await verifyWebhook(
+    delivery,
+    {
+      'webhook-id': 'msg_1',
+      'webhook-timestamp': timestamp,
+      'webhook-signature': `v1,${await sign(`msg_1.${timestamp}.${delivery}`)}`,
+    },
+    SECRET,
+  );
+  check(event.type === 'webhook.test', 'a signed webhook must verify');
 
   try {
     await client.extract.robots.get('missing');

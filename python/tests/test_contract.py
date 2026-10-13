@@ -32,6 +32,7 @@ def sdk_methods(client: Extralt | AsyncExtralt) -> dict[str, str]:
         for resource_name, resource in vars(getattr(client, area)).items():
             collect(f"{area}.{resource_name}", resource)
     collect("query", client.query)
+    collect("webhooks", client.webhooks)
     return found
 
 
@@ -141,6 +142,15 @@ CALLS: dict[str, Call] = {
     "run_query": lambda c: c.query.run("SELECT count() FROM extralt.current_offers"),
     "export_query": lambda c: _export_query(c),
     "get_query_model": lambda c: c.query.model(entities=["listings", "current_offers"]),
+    "create_webhook": lambda c: c.webhooks.create(
+        url="https://hooks.example.com/extralt",
+        event_types=["run.completed", "run.failed"],
+        description="Price alerts workflow",
+    ),
+    "list_webhooks": lambda c: c.webhooks.list(),
+    "get_webhook": lambda c: c.webhooks.get("webhook_1"),
+    "delete_webhook": lambda c: c.webhooks.delete("webhook_1"),
+    "test_webhook": lambda c: c.webhooks.test("webhook_1"),
 }
 
 

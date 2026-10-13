@@ -1141,6 +1141,99 @@ class VariantPriceSeries(BaseModel):
     scope: VariantHistoryScope
 
 
+class Webhook(BaseModel):
+    """
+    An HTTPS endpoint that receives the organization's events, signed with
+    Standard Webhooks.
+    """
+
+    model_config = ConfigDict(
+        extra="allow",
+    )
+    created_at: Annotated[AwareDatetime, Field(examples=["2026-09-28T08:14:03Z"])]
+    description: Annotated[str | None, Field(examples=["Price alerts workflow"])] = None
+    enabled: bool
+    """
+    Whether events are sent. An endpoint whose deliveries keep failing is
+    disabled; it is enabled again from the dashboard.
+    """
+    event_types: Annotated[list[str] | None, Field(examples=[["run.completed", "run.failed"]])] = (
+        None
+    )
+    """
+    The event types sent to this endpoint, or `null` for every event type.
+    Typed as strings because new event types are added over time.
+    """
+    id: Annotated[str, Field(examples=["pn74h2q9x8c3v1m6z5t0r7wbk2f8djsa"])]
+    url: Annotated[str, Field(examples=["https://hooks.example.com/extralt"])]
+
+
+WebhookEventType = TypeAliasType(
+    "WebhookEventType",
+    Literal[
+        "robot.completed",
+        "robot.failed",
+        "run.completed",
+        "run.stopped",
+        "run.failed",
+        "run.enrichment_skipped",
+        "enrichment.completed",
+        "enrichment.stopped",
+        "enrichment.failed",
+        "import.completed",
+        "import.failed",
+    ],
+)
+"""
+An event an endpoint can subscribe to. `webhook.test` is sent on request
+to any endpoint and cannot be subscribed to.
+"""
+
+
+class WebhookList(BaseModel):
+    model_config = ConfigDict(
+        extra="allow",
+    )
+    data: list[Webhook]
+
+
+class WebhookTestResult(BaseModel):
+    model_config = ConfigDict(
+        extra="allow",
+    )
+    event_id: Annotated[str, Field(examples=["evt_jh71x4q9c2v8m3z6t5r0n9wbf2p7akdq"])]
+    """
+    The `id` of the `webhook.test` event, as sent in its body and in the
+    `webhook-id` header.
+    """
+
+
+class WebhookWithSecret(BaseModel):
+    """
+    A new endpoint with the secret its events are signed with.
+    """
+
+    model_config = ConfigDict(
+        extra="allow",
+    )
+    created_at: Annotated[AwareDatetime, Field(examples=["2026-09-28T08:14:03Z"])]
+    description: Annotated[str | None, Field(examples=["Price alerts workflow"])] = None
+    enabled: bool
+    event_types: Annotated[list[str] | None, Field(examples=[["run.completed", "run.failed"]])] = (
+        None
+    )
+    """
+    The event types sent to this endpoint, or `null` for every event type.
+    """
+    id: Annotated[str, Field(examples=["pn74h2q9x8c3v1m6z5t0r7wbk2f8djsa"])]
+    secret: Annotated[str, Field(examples=["whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"])]
+    """
+    The Standard Webhooks signing secret (`whsec_…`). The API returns it
+    only here; admins can reveal it again in the dashboard.
+    """
+    url: Annotated[str, Field(examples=["https://hooks.example.com/extralt"])]
+
+
 class ActivityBucket(BaseModel):
     model_config = ConfigDict(
         extra="allow",
@@ -1906,6 +1999,23 @@ class VariantHistoryPage(BaseModel):
     Opaque cursor for the next page; `null` on the final page.
     """
     scope: VariantHistoryScope
+
+
+class WebhookCreateParams(BaseModel):
+    model_config = ConfigDict(
+        extra="allow",
+    )
+    description: Annotated[str | None, Field(examples=["Price alerts workflow"])] = None
+    event_types: list[WebhookEventType] | None = None
+    """
+    The events to send. Omit to receive every event type, including types
+    added later.
+    """
+    url: Annotated[str, Field(examples=["https://hooks.example.com/extralt"])]
+    """
+    The HTTPS URL events are POSTed to. IP addresses and local host names
+    are refused.
+    """
 
 
 class AssortmentOverlapAnalysis(BaseModel):
