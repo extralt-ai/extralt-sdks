@@ -9,6 +9,7 @@ export const OPERATIONS: { readonly [K in keyof operations]: Operation } = {
   stop_enrichment: { method: 'POST', path: '/v1/enrich/enrichments/{id}/stop', idempotent: true, idempotencyKey: false },
   list_items: { method: 'GET', path: '/v1/enrich/items', idempotent: true, idempotencyKey: false },
   get_item: { method: 'GET', path: '/v1/enrich/items/{item_id}', idempotent: true, idempotencyKey: false },
+  export_items: { method: 'GET', path: '/v1/enrich/items/export', idempotent: true, idempotencyKey: false },
   get_activity: { method: 'GET', path: '/v1/explore/activity', idempotent: true, idempotencyKey: false },
   list_activity_events: { method: 'GET', path: '/v1/explore/activity/events', idempotent: true, idempotencyKey: false },
   analyze_assortment_overlap: { method: 'GET', path: '/v1/explore/analyses/assortment-overlap', idempotent: true, idempotencyKey: false },
@@ -50,4 +51,9 @@ export const OPERATIONS: { readonly [K in keyof operations]: Operation } = {
   run_query: { method: 'POST', path: '/v1/query', idempotent: true, idempotencyKey: false },
   export_query: { method: 'POST', path: '/v1/query/export', idempotent: true, idempotencyKey: false },
   get_query_model: { method: 'GET', path: '/v1/query/model', idempotent: true, idempotencyKey: false },
+  list_webhooks: { method: 'GET', path: '/v1/webhooks', idempotent: true, idempotencyKey: false },
+  create_webhook: { method: 'POST', path: '/v1/webhooks', idempotent: true, idempotencyKey: true },
+  get_webhook: { method: 'GET', path: '/v1/webhooks/{id}', idempotent: true, idempotencyKey: false },
+  delete_webhook: { method: 'DELETE', path: '/v1/webhooks/{id}', idempotent: true, idempotencyKey: false },
+  test_webhook: { method: 'POST', path: '/v1/webhooks/{id}/test', idempotent: false, idempotencyKey: false },
 };

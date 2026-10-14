@@ -16,6 +16,9 @@ OPERATIONS: dict[str, Operation] = {
         "POST", "/v1/enrich/enrichments/{id}/stop", idempotent=True, idempotency_key=False
     ),
     "list_items": Operation("GET", "/v1/enrich/items", idempotent=True, idempotency_key=False),
+    "export_items": Operation(
+        "GET", "/v1/enrich/items/export", idempotent=True, idempotency_key=False
+    ),
     "get_item": Operation(
         "GET", "/v1/enrich/items/{item_id}", idempotent=True, idempotency_key=False
     ),
@@ -123,4 +126,13 @@ OPERATIONS: dict[str, Operation] = {
     "run_query": Operation("POST", "/v1/query", idempotent=True, idempotency_key=False),
     "export_query": Operation("POST", "/v1/query/export", idempotent=True, idempotency_key=False),
     "get_query_model": Operation("GET", "/v1/query/model", idempotent=True, idempotency_key=False),
+    "list_webhooks": Operation("GET", "/v1/webhooks", idempotent=True, idempotency_key=False),
+    "create_webhook": Operation("POST", "/v1/webhooks", idempotent=True, idempotency_key=True),
+    "get_webhook": Operation("GET", "/v1/webhooks/{id}", idempotent=True, idempotency_key=False),
+    "delete_webhook": Operation(
+        "DELETE", "/v1/webhooks/{id}", idempotent=True, idempotency_key=False
+    ),
+    "test_webhook": Operation(
+        "POST", "/v1/webhooks/{id}/test", idempotent=False, idempotency_key=False
+    ),
 }

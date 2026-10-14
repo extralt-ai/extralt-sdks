@@ -30,6 +30,7 @@ from .._http import AsyncHTTP
 from .._pagination import AsyncPaginator
 from .._resource import AsyncResource
 from .._streaming import AsyncBinaryStream
+from .explore import Timestamp
 
 CHUNK_SIZE = 1024 * 1024
 
@@ -140,14 +141,23 @@ class AsyncRuns(AsyncResource):
 
     @operation("list_runs")
     def list(
-        self, *, limit: int | None = None, cursor: str | None = None
+        self,
+        *,
+        finished_since: Timestamp | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
     ) -> AsyncPaginator[RunPage, RunSummary]:
+        """Lists Runs, newest first.
+
+        With `finished_since`, lists only the Runs finished at or after that time, oldest finish
+        first: pass the last `finished_at` you processed to pick up what finished since.
+        """
         return AsyncPaginator(
             self._http,
             "list_runs",
             RunPage,
             items="data",
-            params={"limit": limit, "cursor": cursor},
+            params={"finished_since": finished_since, "limit": limit, "cursor": cursor},
         )
 
     @operation("get_run")

@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import Any
 
 from ..._base import json_body
 from ..._operation import operation
-from ...types import Enrichment, EnrichmentPage, EnrichmentSource, Item, ItemPage
+from ...types import (
+    Enrichment,
+    EnrichmentPage,
+    EnrichmentSource,
+    ExportFormat,
+    Item,
+    ItemPage,
+)
 from .._http import AsyncHTTP
 from .._pagination import AsyncPaginator
 from .._resource import AsyncResource
+from .._streaming import AsyncBinaryStream
+from .explore import Timestamp
 
 
 class AsyncEnrich:
@@ -47,14 +58,30 @@ class AsyncEnrichments(AsyncResource):
 
     @operation("list_enrichments")
     def list(
-        self, *, limit: int | None = None, cursor: str | None = None
+        self,
+        *,
+        source_id: str | None = None,
+        finished_since: Timestamp | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
     ) -> AsyncPaginator[EnrichmentPage, Enrichment]:
+        """Lists Enrichments, newest first.
+
+        `source_id` keeps the Enrichments of one Run or Import, such as the one a Run started with
+        `auto_enrich`. `finished_since` keeps only the Enrichments finished at or after that time,
+        oldest finish first. The two cannot be combined.
+        """
         return AsyncPaginator(
             self._http,
             "list_enrichments",
             EnrichmentPage,
             items="data",
-            params={"limit": limit, "cursor": cursor},
+            params={
+                "source_id": source_id,
+                "finished_since": finished_since,
+                "limit": limit,
+                "cursor": cursor,
+            },
         )
 
     @operation("get_enrichment")
@@ -102,3 +129,28 @@ class AsyncItems(AsyncResource):
             params={"enrichment_id": enrichment_id},
             timeout=timeout,
         )
+
+    @operation("export_items")
+    @asynccontextmanager
+    async def export(
+        self,
+        *,
+        enrichment_id: str,
+        format: ExportFormat | None = None,
+        timeout: float | None = None,
+    ) -> AsyncGenerator[AsyncBinaryStream]:
+        """Streams every Item of an Enrichment as Parquet (default) or JSON Lines.
+
+        Use it as a context manager and read the stream inside the block, for example with
+        `write_to(path)`.
+        """
+        response = await self._http.request(
+            "export_items",
+            params={"enrichment_id": enrichment_id, "format": format},
+            timeout=timeout,
+            stream=True,
+        )
+        try:
+            yield AsyncBinaryStream(response)
+        finally:
+            await response.aclose()

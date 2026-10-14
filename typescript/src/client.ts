@@ -5,6 +5,7 @@ import { Enrich } from './resources/enrich.js';
 import { Explore } from './resources/explore.js';
 import { Extract } from './resources/extract.js';
 import { Query } from './resources/query.js';
+import { Webhooks } from './resources/webhooks.js';
 
 const DEFAULT_BASE_URL = 'https://api.extralt.com';
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
@@ -46,6 +47,7 @@ export class Extralt {
   readonly enrich: Enrich;
   readonly explore: Explore;
   readonly query: Query;
+  readonly webhooks: Webhooks;
 
   constructor(options: ClientOptions = {}) {
     const apiKey = options.apiKey ?? environment('EXTRALT_API_KEY');
@@ -71,6 +73,7 @@ export class Extralt {
     this.enrich = new Enrich(this.http);
     this.explore = new Explore(this.http);
     this.query = new Query(this.http);
+    this.webhooks = new Webhooks(this.http);
   }
 }
 
