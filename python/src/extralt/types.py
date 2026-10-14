@@ -427,6 +427,9 @@ EnrichmentTrigger = TypeAliasType(
     "EnrichmentTrigger",
     Annotated[Literal["agent", "dashboard", "api", "auto"], Field(examples=["api"])],
 )
+"""
+Requests from the SDKs and MCP count as `api`.
+"""
 
 
 EntityKind = TypeAliasType("EntityKind", Literal["store", "product", "variant", "listing"])
@@ -1020,11 +1023,11 @@ RunStatus = TypeAliasType(
 
 RunTrigger = TypeAliasType(
     "RunTrigger",
-    Annotated[
-        Literal["agent", "api", "apify", "dashboard", "local", "webhook", "schedule"],
-        Field(examples=["api"]),
-    ],
+    Annotated[Literal["agent", "api", "dashboard", "schedule"], Field(examples=["api"])],
 )
+"""
+Requests from the SDKs and MCP count as `api`.
+"""
 
 
 SchedulePauseReason = TypeAliasType(
