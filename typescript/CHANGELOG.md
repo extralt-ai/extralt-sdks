@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/extralt-ai/extralt-sdks/compare/typescript-v0.1.0...typescript-v0.2.0) (2026-10-14)
+
+
+### Features
+
+* webhook endpoints and signature verification in both SDKs ([#14](https://github.com/extralt-ai/extralt-sdks/issues/14)) ([fddcca8](https://github.com/extralt-ai/extralt-sdks/commit/fddcca8d4332126ccfb9cdc7f2c192822726ffa9))
+
 ## [0.1.0](https://github.com/extralt-ai/extralt-sdks/compare/typescript-v0.0.1...typescript-v0.1.0) (2026-10-11)
 
 
