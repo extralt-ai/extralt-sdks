@@ -2814,6 +2814,17 @@
               "null"
             ]
           },
+          "changes": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ActivityCounts",
+                "description": "Change events evidenced by the Enrichment's Items and its Run's removal checks, with\nthe definitions of `/v1/explore/activity`. Counted when its analytics delivery\ncompletes and covering every continuation; `null` until then."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "created_at": {
             "examples": [
               "2026-09-28T08:14:03Z"
@@ -2840,6 +2851,17 @@
           "finished": {
             "description": "Whether the Enrichment has reached a final status.",
             "type": "boolean"
+          },
+          "finished_at": {
+            "description": "When the Enrichment reached its final status; `null` while it is unfinished.",
+            "examples": [
+              "2026-09-28T08:14:03Z"
+            ],
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "examples": [
@@ -6565,6 +6587,17 @@
             "description": "Whether the Run has reached a final status. A restarted Run is unfinished again.",
             "type": "boolean"
           },
+          "finished_at": {
+            "description": "When the Run reached its final status; `null` while it is unfinished.",
+            "examples": [
+              "2026-09-28T08:14:03Z"
+            ],
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "id": {
             "examples": [
               "kh72p9xq4c8v1m6z3t5r0n8wbd2f4hje"
@@ -6794,6 +6827,17 @@
           "finished": {
             "description": "Whether the Run has reached a final status. A restarted Run is unfinished again.",
             "type": "boolean"
+          },
+          "finished_at": {
+            "description": "When the Run reached its final status; `null` while it is unfinished.",
+            "examples": [
+              "2026-09-28T08:14:03Z"
+            ],
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "examples": [
@@ -7912,6 +7956,7 @@
           "enrichment.completed",
           "enrichment.stopped",
           "enrichment.failed",
+          "enrichment.changes",
           "import.completed",
           "import.failed"
         ],
@@ -8025,7 +8070,7 @@
   "info": {
     "description": "Stable v1 API for extraction, enrichment, and ecommerce intelligence. Authentication is required for every API endpoint using an organization-bound Bearer API key. Mutating create/restart operations require an Idempotency-Key header.\n\nCompatible agents can use the same customer-facing capabilities through [Extralt MCP](https://extralt.com/docs/guides/using-mcp). MCP uses OAuth and publishes tool schemas separately from this REST contract.\n\n[Back to extralt.com](https://extralt.com)",
     "title": "Extralt API",
-    "version": "1.26.0"
+    "version": "1.28.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -8033,6 +8078,15 @@
       "get": {
         "operationId": "list_enrichments",
         "parameters": [
+          {
+            "description": "Only the Enrichments of this Run or Import, such as the one a Run started with `auto_enrich`.",
+            "in": "query",
+            "name": "source_id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "in": "query",
             "name": "limit",
@@ -8046,7 +8100,7 @@
             }
           },
           {
-            "description": "Opaque forward-only cursor returned as `next_cursor`.",
+            "description": "Opaque forward-only cursor returned as `next_cursor`; keep `source_id` and\n`finished_since` unchanged.",
             "in": "query",
             "name": "cursor",
             "required": false,
@@ -8054,6 +8108,16 @@
               "examples": [
                 "eyJ2ZXJzaW9uIjoxLCJhZnRlciI6IjIzNDA3MDgwMjE4MTE5MzcyOCJ9"
               ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only Enrichments that finished at or after this time, oldest finish first. Without it,\nall Enrichments, newest first. Cannot be combined with `source_id`.",
+            "in": "query",
+            "name": "finished_since",
+            "required": false,
+            "schema": {
+              "format": "date-time",
               "type": "string"
             }
           }
@@ -9147,6 +9211,198 @@
           }
         ],
         "summary": "List Items",
+        "tags": [
+          "Items"
+        ],
+        "x-extralt-idempotent": true
+      }
+    },
+    "/v1/enrich/items/export": {
+      "get": {
+        "description": "Export the Items of an Enrichment as JSONL or Parquet.",
+        "operationId": "export_items",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "enrichment_id",
+            "required": true,
+            "schema": {
+              "examples": [
+                "nd73k8q2z9x4c1v6m5t0r8wbs2f6ahjn"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ExportFormat",
+              "default": "parquet"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {}
+            },
+            "description": "Binary file download (Parquet or JSONL). In curl, use `-o items.parquet` to save to disk.",
+            "headers": {
+              "x-request-id": {
+                "description": "Request identifier, also returned as error.request_id; include it when contacting support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing or invalid enrichment_id",
+            "headers": {
+              "x-request-id": {
+                "description": "Request identifier, also returned as error.request_id; include it when contacting support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "The Bearer authentication challenge",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-request-id": {
+                "description": "Request identifier, also returned as error.request_id; include it when contacting support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The credential or organization lacks access to this operation",
+            "headers": {
+              "x-request-id": {
+                "description": "Request identifier, also returned as error.request_id; include it when contacting support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The organization rate limit was exceeded",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying, when the server can calculate the delay",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "x-request-id": {
+                "description": "Request identifier, also returned as error.request_id; include it when contacting support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "x-request-id": {
+                "description": "Request identifier, also returned as error.request_id; include it when contacting support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A required upstream service is unavailable",
+            "headers": {
+              "x-request-id": {
+                "description": "Request identifier, also returned as error.request_id; include it when contacting support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request exceeded the server time limit",
+            "headers": {
+              "x-request-id": {
+                "description": "Request identifier, also returned as error.request_id; include it when contacting support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ],
+        "summary": "Export Items",
         "tags": [
           "Items"
         ],
@@ -15958,7 +16214,7 @@
             }
           },
           {
-            "description": "Opaque forward-only cursor returned as `next_cursor`.",
+            "description": "Opaque forward-only cursor returned as `next_cursor`; keep `finished_since` unchanged.",
             "in": "query",
             "name": "cursor",
             "required": false,
@@ -15966,6 +16222,16 @@
               "examples": [
                 "eyJ2ZXJzaW9uIjoxLCJhZnRlciI6IjIzNDA3MDgwMjE4MTE5MzcyOCJ9"
               ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only Runs that finished at or after this time, oldest finish first. Without it, all\nRuns, newest first.",
+            "in": "query",
+            "name": "finished_since",
+            "required": false,
+            "schema": {
+              "format": "date-time",
               "type": "string"
             }
           }
@@ -19504,7 +19770,7 @@
     },
     "/v1/webhooks": {
       "get": {
-        "description": "List the organization's webhooks, at most 20 unless the limit was raised.",
+        "description": "List the organization's webhooks.",
         "operationId": "list_webhooks",
         "responses": {
           "200": {

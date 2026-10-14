@@ -16,6 +16,9 @@ OPERATIONS: dict[str, Operation] = {
         "POST", "/v1/enrich/enrichments/{id}/stop", idempotent=True, idempotency_key=False
     ),
     "list_items": Operation("GET", "/v1/enrich/items", idempotent=True, idempotency_key=False),
+    "export_items": Operation(
+        "GET", "/v1/enrich/items/export", idempotent=True, idempotency_key=False
+    ),
     "get_item": Operation(
         "GET", "/v1/enrich/items/{item_id}", idempotent=True, idempotency_key=False
     ),
