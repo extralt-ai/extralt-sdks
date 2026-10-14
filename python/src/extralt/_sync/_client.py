@@ -13,6 +13,7 @@ from .resources.enrich import Enrich
 from .resources.explore import Explore
 from .resources.extract import Extract
 from .resources.query import Query
+from .resources.webhooks import Webhooks
 
 
 class Extralt:
@@ -46,6 +47,7 @@ class Extralt:
         self.enrich = Enrich(self._http)
         self.explore = Explore(self._http)
         self.query = Query(self._http)
+        self.webhooks = Webhooks(self._http)
 
     def close(self) -> None:
         self._http.close()

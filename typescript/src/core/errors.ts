@@ -111,6 +111,11 @@ export class WaitTimeoutError<T extends Job = Job> extends ExtraltError {
   }
 }
 
+/** A webhook delivery's headers or signature do not check out. Answer it with a 400. */
+export class WebhookVerificationError extends ExtraltError {
+  override name = 'WebhookVerificationError';
+}
+
 const STATUS_ERRORS: Record<number, typeof APIStatusError> = {
   400: BadRequestError,
   401: AuthenticationError,

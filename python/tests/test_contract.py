@@ -32,6 +32,7 @@ def sdk_methods(client: Extralt | AsyncExtralt) -> dict[str, str]:
         for resource_name, resource in vars(getattr(client, area)).items():
             collect(f"{area}.{resource_name}", resource)
     collect("query", client.query)
+    collect("webhooks", client.webhooks)
     return found
 
 
@@ -57,7 +58,9 @@ CALLS: dict[str, Call] = {
         auto_enrich=True,
         wait=False,
     ),
-    "list_runs": lambda c: c.extract.runs.list(limit=10, cursor="c").first_page(),
+    "list_runs": lambda c: c.extract.runs.list(
+        finished_since="2026-01-31T00:00:00Z", limit=10, cursor="c"
+    ).first_page(),
     "get_run": lambda c: c.extract.runs.get("run_1"),
     "restart_run": lambda c: c.extract.runs.restart("run_1", budget=3, wait=False),
     "stop_run": lambda c: c.extract.runs.stop("run_1"),
@@ -78,6 +81,7 @@ CALLS: dict[str, Call] = {
     "list_captures": lambda c: c.extract.captures.list(run_id="run_1").first_page(),
     "count_captures": lambda c: c.extract.captures.count(import_id="import_1"),
     "export_captures": lambda c: _export(c),
+    "export_items": lambda c: _export_items(c),
     "create_import": lambda c: c.extract.imports.create(
         b"sku,title\n1,Shoe\n", file_name="catalog.csv", country="US", wait=False
     ),
@@ -85,7 +89,9 @@ CALLS: dict[str, Call] = {
     "start_enrichment": lambda c: c.enrich.enrichments.start(
         source={"kind": "run", "id": "run_1"}, budget=50, wait=False
     ),
-    "list_enrichments": lambda c: c.enrich.enrichments.list(limit=10).first_page(),
+    "list_enrichments": lambda c: c.enrich.enrichments.list(
+        source_id="run_1", limit=10
+    ).first_page(),
     "get_enrichment": lambda c: c.enrich.enrichments.get("enrichment_1"),
     "stop_enrichment": lambda c: c.enrich.enrichments.stop("enrichment_1"),
     "list_items": lambda c: c.enrich.items.list(enrichment_id="enrichment_1").first_page(),
@@ -141,11 +147,25 @@ CALLS: dict[str, Call] = {
     "run_query": lambda c: c.query.run("SELECT count() FROM extralt.current_offers"),
     "export_query": lambda c: _export_query(c),
     "get_query_model": lambda c: c.query.model(entities=["listings", "current_offers"]),
+    "create_webhook": lambda c: c.webhooks.create(
+        url="https://hooks.example.com/extralt",
+        event_types=["run.completed", "run.failed"],
+        description="Price alerts workflow",
+    ),
+    "list_webhooks": lambda c: c.webhooks.list(),
+    "get_webhook": lambda c: c.webhooks.get("webhook_1"),
+    "delete_webhook": lambda c: c.webhooks.delete("webhook_1"),
+    "test_webhook": lambda c: c.webhooks.test("webhook_1"),
 }
 
 
 def _export(client: Extralt) -> bytes:
     with client.extract.captures.export(run_id="run_1", format="jsonl") as stream:
+        return b"".join(stream.iter_bytes())
+
+
+def _export_items(client: Extralt) -> bytes:
+    with client.enrich.items.export(enrichment_id="enrichment_1", format="jsonl") as stream:
         return b"".join(stream.iter_bytes())
 
 

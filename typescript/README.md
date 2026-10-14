@@ -173,6 +173,48 @@ await download.arrayBuffer(); // or stream download.body to disk
 `run()` returns the rows that fit in one response and sets `truncated` when some were left out;
 `export()` streams every row. 64-bit integers and decimals arrive as strings.
 
+## Webhooks
+
+A webhook endpoint receives the organization's events, such as a finished Run, whether the work
+was started from the API, the dashboard or a schedule. Register one and keep its secret:
+
+```ts
+const endpoint = await client.webhooks.create({
+  url: 'https://hooks.example.com/extralt',
+  event_types: ['run.completed', 'run.failed'], // leave out for every event type
+});
+console.log(endpoint.secret); // store it: the API returns it only here
+await client.webhooks.test(endpoint.id); // sends a webhook.test event
+```
+
+Deliveries are signed with [Standard Webhooks](https://www.standardwebhooks.com/).
+`verifyWebhook` checks the signature and the timestamp with the Web Crypto API and returns the
+event, typed by its `type`. Pass it the raw request body, before any JSON parsing: in Express,
+read it with `express.raw({ type: 'application/json' })`.
+
+```ts
+import { verifyWebhook, WebhookVerificationError } from 'extralt';
+
+async function handle(request: Request, secret: string): Promise<Response> {
+  try {
+    const event = await verifyWebhook(await request.text(), request.headers, secret);
+    if (event.type === 'run.completed') {
+      console.log(event.data.id, event.data.status); // event.data is the Run
+    }
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    if (error instanceof WebhookVerificationError) return new Response(null, { status: 400 });
+    throw error;
+  }
+}
+```
+
+Answer with a 2xx status within 10 seconds; anything else is retried for about a day and a half.
+Events arrive at least once and in no guaranteed order, so deduplicate on `event.id`.
+`enrichment.changes` summarizes what an Enrichment found in `event.data.changes`. New event types
+are added within v1: keep a `default` branch that ignores a `type` you do not handle, rather than
+an exhaustive `never` check.
+
 ## Errors and retries
 
 API errors reject with a subclass of `APIStatusError` with `status`, `code`, `message` and

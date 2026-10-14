@@ -163,6 +163,45 @@ with client.query.export("SELECT * FROM extralt.current_offers", format="parquet
 `run()` returns the rows that fit in one response and sets `truncated` when some were left out;
 `export()` streams every row. 64-bit integers and decimals arrive as strings.
 
+## Webhooks
+
+A webhook endpoint receives the organization's events, such as a finished Run, whether the work
+was started from the API, the dashboard or a schedule. Register one and keep its secret:
+
+```python
+endpoint = client.webhooks.create(
+    url="https://hooks.example.com/extralt",
+    event_types=["run.completed", "run.failed"],  # leave out for every event type
+)
+secret = endpoint.secret  # the API returns it only here
+client.webhooks.test(endpoint.id)  # sends a webhook.test event
+```
+
+Deliveries are signed with [Standard Webhooks](https://www.standardwebhooks.com/).
+`verify_webhook` checks the signature and the timestamp and returns the typed event. Pass it the
+raw request body, before any JSON parsing: `request.get_data()` in Flask, `await request.body()`
+in FastAPI.
+
+```python
+from extralt import WebhookVerificationError, verify_webhook
+from extralt.webhooks import RunWebhookEvent
+
+
+def handle(body: bytes, headers: dict[str, str]) -> int:
+    try:
+        event = verify_webhook(body, headers, secret)
+    except WebhookVerificationError:
+        return 400
+    if isinstance(event, RunWebhookEvent) and event.type == "run.completed":
+        print(event.data.id, event.data.status)  # event.data is the Run
+    return 200
+```
+
+Answer with a 2xx status within 10 seconds; anything else is retried for about a day and a half.
+Events arrive at least once and in no guaranteed order, so deduplicate on `event.id`. `enrichment.changes` summarizes what an Enrichment found in
+`event.data.changes`. Event types this SDK version does not know yet arrive as
+`UnknownWebhookEvent`.
+
 ## Errors and retries
 
 API errors raise a subclass of `APIStatusError` with `status_code`, `code`, `message` and

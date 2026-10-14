@@ -22,6 +22,7 @@ __all__ = [
     "UnprocessableEntityError",
     "UnsupportedMediaTypeError",
     "WaitTimeoutError",
+    "WebhookVerificationError",
 ]
 
 
@@ -140,6 +141,10 @@ class WaitTimeoutError(ExtraltError):
     def __init__(self, message: str, *, resource: Any) -> None:
         super().__init__(message)
         self.resource = resource
+
+
+class WebhookVerificationError(ExtraltError):
+    """A webhook delivery's headers or signature do not check out. Answer it with a 400."""
 
 
 STATUS_ERRORS: dict[int, type[APIStatusError]] = {
