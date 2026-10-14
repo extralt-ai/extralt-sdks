@@ -1180,6 +1180,7 @@ WebhookEventType = TypeAliasType(
         "enrichment.completed",
         "enrichment.stopped",
         "enrichment.failed",
+        "enrichment.changes",
         "import.completed",
         "import.failed",
     ],
@@ -1847,6 +1848,10 @@ class Run(BaseModel):
     """
     Whether the Run has reached a final status. A restarted Run is unfinished again.
     """
+    finished_at: Annotated[AwareDatetime | None, Field(examples=["2026-09-28T08:14:03Z"])] = None
+    """
+    When the Run reached its final status; `null` while it is unfinished.
+    """
     id: Annotated[str, Field(examples=["kh72p9xq4c8v1m6z3t5r0n8wbd2f4hje"])]
     in_queue: Annotated[int, Field(ge=0)]
     name: Annotated[str, Field(examples=["example-store_com_US_4"])]
@@ -1873,6 +1878,10 @@ class RunSummary(BaseModel):
     finished: bool
     """
     Whether the Run has reached a final status. A restarted Run is unfinished again.
+    """
+    finished_at: Annotated[AwareDatetime | None, Field(examples=["2026-09-28T08:14:03Z"])] = None
+    """
+    When the Run reached its final status; `null` while it is unfinished.
     """
     id: Annotated[str, Field(examples=["kh72p9xq4c8v1m6z3t5r0n8wbd2f4hje"])]
     in_queue: Annotated[int, Field(ge=0)]
@@ -2158,12 +2167,17 @@ class Enrichment(BaseModel):
         extra="allow",
     )
     budget: Annotated[int | None, Field(examples=[100], ge=0)] = None
+    changes: ActivityCounts | None = None
     created_at: Annotated[AwareDatetime, Field(examples=["2026-09-28T08:14:03Z"])]
     duration_ms: Annotated[int | None, Field(examples=[36093], ge=0)] = None
     errors: Annotated[int, Field(ge=0)]
     finished: bool
     """
     Whether the Enrichment has reached a final status.
+    """
+    finished_at: Annotated[AwareDatetime | None, Field(examples=["2026-09-28T08:14:03Z"])] = None
+    """
+    When the Enrichment reached its final status; `null` while it is unfinished.
     """
     id: Annotated[str, Field(examples=["nd73k8q2z9x4c1v6m5t0r8wbs2f6ahjn"])]
     processed: Annotated[int, Field(examples=[100], ge=0)]
