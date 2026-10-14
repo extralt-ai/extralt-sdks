@@ -54,16 +54,6 @@ describe('verifyWebhook', () => {
     expect(verified.data.id).toBe(run.id);
   });
 
-  it('types the changes summary as an Enrichment event', async () => {
-    const enrichment = example(successResponse('get_enrichment').schema ?? {});
-    const changes = { price_decreases: 12, listings_added: 0 };
-    const body = event('enrichment.changes', { ...enrichment, changes });
-    const verified = await verifyWebhook(body, signed(body), SECRET);
-    if (verified.type !== 'enrichment.changes') throw new Error('not narrowed');
-    expect(verified.data.id).toBe(enrichment.id);
-    expect(verified.data).toMatchObject({ changes });
-  });
-
   it('reads a Headers object and any matching signature', async () => {
     const headers = new Headers(signed(testEvent));
     headers.set('Webhook-Signature', `v1,bm90IGl0 ${headers.get('webhook-signature')}`);

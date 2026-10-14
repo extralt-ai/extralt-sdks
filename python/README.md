@@ -198,9 +198,8 @@ def handle(body: bytes, headers: dict[str, str]) -> int:
 ```
 
 Answer with a 2xx status within 10 seconds; anything else is retried for about a day and a half.
-Events arrive at least once and in no guaranteed order, so deduplicate on `event.id`. `enrichment.changes` summarizes what an Enrichment found in
-`event.data.changes`. Event types this SDK version does not know yet arrive as
-`UnknownWebhookEvent`.
+Events arrive at least once and in no guaranteed order, so deduplicate on `event.id`. Event types
+this SDK version does not know yet arrive as `UnknownWebhookEvent`.
 
 ## Errors and retries
 

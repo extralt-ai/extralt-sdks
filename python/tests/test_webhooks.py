@@ -10,13 +10,8 @@ import time
 import pytest
 
 from extralt import WebhookVerificationError, verify_webhook
-from extralt.types import Enrichment, Run
-from extralt.webhooks import (
-    EnrichmentWebhookEvent,
-    RunWebhookEvent,
-    TestWebhookEvent,
-    UnknownWebhookEvent,
-)
+from extralt.types import Run
+from extralt.webhooks import RunWebhookEvent, TestWebhookEvent, UnknownWebhookEvent
 
 from . import spec
 
@@ -79,23 +74,12 @@ def test_returns_the_test_event() -> None:
     assert verified.data.webhook_id == "webhook_1"
 
 
-def test_returns_the_changes_summary_as_an_enrichment_event() -> None:
-    _, schema = spec.success_response("get_enrichment")
-    assert schema is not None
-    changes = {"price_decreases": 12, "listings_added": 0}
-    body = event("enrichment.changes", {**spec.example(schema), "changes": changes})
-    verified = verify_webhook(body, signed(body), SECRET)
-    assert isinstance(verified, EnrichmentWebhookEvent)
-    assert isinstance(verified.data, Enrichment)
-    assert getattr(verified.data, "changes", None) == changes
-
-
 def test_keeps_event_types_added_later_readable() -> None:
-    body = event("store.updated", {"store_id": "store_1"})
+    body = event("enrichment.changes", {"enrichment_id": "enrichment_1", "new": 3})
     verified = verify_webhook(body, signed(body), SECRET)
     assert isinstance(verified, UnknownWebhookEvent)
-    assert verified.type == "store.updated"
-    assert verified.data == {"store_id": "store_1"}
+    assert verified.type == "enrichment.changes"
+    assert verified.data == {"enrichment_id": "enrichment_1", "new": 3}
 
 
 def test_reads_headers_in_any_case_and_any_matching_signature() -> None:

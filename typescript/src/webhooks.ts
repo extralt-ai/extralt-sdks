@@ -23,14 +23,10 @@ export interface RunWebhookEvent {
   data: Run;
 }
 
-/**
- * `enrichment.changes` summarizes what the Enrichment found in `data.changes`: price decreases and
- * increases, stock changes, Listings added and removed, and new lows.
- */
 export interface EnrichmentWebhookEvent {
   /** Stable across retries of the same event to the same endpoint: deduplicate on it. */
   id: string;
-  type: 'enrichment.completed' | 'enrichment.stopped' | 'enrichment.failed' | 'enrichment.changes';
+  type: 'enrichment.completed' | 'enrichment.stopped' | 'enrichment.failed';
   created_at: string;
   data: Enrichment;
 }
@@ -58,7 +54,8 @@ export interface TestWebhookEvent {
 
 /**
  * An event Extralt sends to a webhook endpoint, narrowed by its `type`. New event types are added
- * within v1, so handle a type you do not know, for example in a `default` branch.
+ * within v1 and `verifyWebhook` returns them too, so keep a `default` branch that ignores them
+ * rather than an exhaustive `never` check.
  */
 export type WebhookEvent =
   | RobotWebhookEvent
