@@ -1920,6 +1920,7 @@ export interface components {
          */
         EnrichmentStatus: "pending" | "running" | "stopping" | "materializing" | "completed" | "stopped" | "failed";
         /**
+         * @description Requests from the SDKs and MCP count as `api`.
          * @example api
          * @enum {string}
          */
@@ -3366,10 +3367,11 @@ export interface components {
             updated_at?: string | null;
         };
         /**
+         * @description Requests from the SDKs and MCP count as `api`.
          * @example api
          * @enum {string}
          */
-        RunTrigger: "agent" | "api" | "apify" | "dashboard" | "local" | "webhook" | "schedule";
+        RunTrigger: "agent" | "api" | "dashboard" | "schedule";
         Schedule: {
             auto_enrich: boolean;
             /**
