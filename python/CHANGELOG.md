@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/extralt-ai/extralt-sdks/compare/python-v0.2.0...python-v0.3.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove the internal origins from RunTrigger ([#19](https://github.com/extralt-ai/extralt-sdks/issues/19))
+
+### Features
+
+* remove the internal origins from RunTrigger ([#19](https://github.com/extralt-ai/extralt-sdks/issues/19)) ([f248930](https://github.com/extralt-ai/extralt-sdks/commit/f24893064974005f2da2d02eed84bef9a2dcdd52))
+
 ## [0.2.0](https://github.com/extralt-ai/extralt-sdks/compare/python-v0.1.0...python-v0.2.0) (2026-10-14)
 
 
