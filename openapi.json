@@ -8070,7 +8070,7 @@
   "info": {
     "description": "Stable v1 API for extraction, enrichment, and ecommerce intelligence. Authentication is required for every API endpoint using an organization-bound Bearer API key. Mutating create/restart operations require an Idempotency-Key header.\n\nCompatible agents can use the same customer-facing capabilities through [Extralt MCP](https://extralt.com/docs/guides/using-mcp). MCP uses OAuth and publishes tool schemas separately from this REST contract.\n\n[Back to extralt.com](https://extralt.com)",
     "title": "Extralt API",
-    "version": "1.28.0"
+    "version": "1.29.0"
   },
   "openapi": "3.1.0",
   "paths": {
