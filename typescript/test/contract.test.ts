@@ -17,7 +17,8 @@ const CALLS: Record<string, Call> = {
       { robot_id: 'robot_1', start_urls: ['https://example.com/a'], budget: 5, auto_enrich: true },
       { wait: false },
     ),
-  list_runs: (c) => c.extract.runs.list({ limit: 10, cursor: 'c' }).firstPage(),
+  list_runs: (c) =>
+    c.extract.runs.list({ finished_since: START, limit: 10, cursor: 'c' }).firstPage(),
   get_run: (c) => c.extract.runs.get('run_1'),
   restart_run: (c) => c.extract.runs.restart('run_1', { budget: 3 }, { wait: false }),
   stop_run: (c) => c.extract.runs.stop('run_1'),
@@ -54,11 +55,14 @@ const CALLS: Record<string, Call> = {
       { source: { kind: 'run', id: 'run_1' }, budget: 50 },
       { wait: false },
     ),
-  list_enrichments: (c) => c.enrich.enrichments.list({ limit: 10 }).firstPage(),
+  list_enrichments: (c) =>
+    c.enrich.enrichments.list({ finished_since: START, limit: 10 }).firstPage(),
   get_enrichment: (c) => c.enrich.enrichments.get('enrichment_1'),
   stop_enrichment: (c) => c.enrich.enrichments.stop('enrichment_1'),
   list_items: (c) => c.enrich.items.list({ enrichment_id: 'enrichment_1' }).firstPage(),
   get_item: (c) => c.enrich.items.get('1', { enrichment_id: 'enrichment_1' }),
+  export_items: async (c) =>
+    (await c.enrich.items.export({ enrichment_id: 'enrichment_1', format: 'jsonl' })).arrayBuffer(),
   get_overview: (c) => c.explore.overview.get(),
   get_facets: (c) => c.explore.facets.get({ country: 'US', condition: 'new', limit: 20 }),
   get_activity: (c) => c.explore.activity.get({ from: START, bucket: 'day' }),

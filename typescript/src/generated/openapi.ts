@@ -95,6 +95,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/enrich/items/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Items
+         * @description Export the Items of an Enrichment as JSONL or Parquet.
+         */
+        get: operations["export_items"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/explore/activity": {
         parameters: {
             query?: never;
@@ -789,7 +809,7 @@ export interface paths {
         };
         /**
          * List Webhooks
-         * @description List the organization's webhooks, at most 20 unless the limit was raised.
+         * @description List the organization's webhooks.
          */
         get: operations["list_webhooks"];
         put?: never;
@@ -1826,6 +1846,7 @@ export interface components {
              * @example 100
              */
             budget?: number | null;
+            changes?: components["schemas"]["ActivityCounts"] | null;
             /**
              * Format: date-time
              * @example 2026-09-28T08:14:03Z
@@ -1840,6 +1861,12 @@ export interface components {
             errors: number;
             /** @description Whether the Enrichment has reached a final status. */
             finished: boolean;
+            /**
+             * Format: date-time
+             * @description When the Enrichment reached its final status; `null` while it is unfinished.
+             * @example 2026-09-28T08:14:03Z
+             */
+            finished_at?: string | null;
             /** @example nd73k8q2z9x4c1v6m5t0r8wbs2f6ahjn */
             id: string;
             /**
@@ -3215,6 +3242,12 @@ export interface components {
             extracted: number;
             /** @description Whether the Run has reached a final status. A restarted Run is unfinished again. */
             finished: boolean;
+            /**
+             * Format: date-time
+             * @description When the Run reached its final status; `null` while it is unfinished.
+             * @example 2026-09-28T08:14:03Z
+             */
+            finished_at?: string | null;
             /** @example kh72p9xq4c8v1m6z3t5r0n8wbd2f4hje */
             id: string;
             /** Format: int64 */
@@ -3301,6 +3334,12 @@ export interface components {
             extracted: number;
             /** @description Whether the Run has reached a final status. A restarted Run is unfinished again. */
             finished: boolean;
+            /**
+             * Format: date-time
+             * @description When the Run reached its final status; `null` while it is unfinished.
+             * @example 2026-09-28T08:14:03Z
+             */
+            finished_at?: string | null;
             /** @example kh72p9xq4c8v1m6z3t5r0n8wbd2f4hje */
             id: string;
             /** Format: int64 */
@@ -3713,7 +3752,7 @@ export interface components {
          *     to any endpoint and cannot be subscribed to.
          * @enum {string}
          */
-        WebhookEventType: "robot.completed" | "robot.failed" | "run.completed" | "run.stopped" | "run.failed" | "run.enrichment_skipped" | "enrichment.completed" | "enrichment.stopped" | "enrichment.failed" | "import.completed" | "import.failed";
+        WebhookEventType: "robot.completed" | "robot.failed" | "run.completed" | "run.stopped" | "run.failed" | "run.enrichment_skipped" | "enrichment.completed" | "enrichment.stopped" | "enrichment.failed" | "enrichment.changes" | "import.completed" | "import.failed";
         WebhookList: {
             data: components["schemas"]["Webhook"][];
         };
@@ -3924,9 +3963,19 @@ export interface operations {
     list_enrichments: {
         parameters: {
             query?: {
-                /** @description Opaque forward-only cursor returned as `next_cursor`. */
+                /**
+                 * @description Opaque forward-only cursor returned as `next_cursor`; keep `source_id` and
+                 *     `finished_since` unchanged.
+                 */
                 cursor?: string;
+                /**
+                 * @description Only Enrichments that finished at or after this time, oldest finish first. Without it,
+                 *     all Enrichments, newest first. Cannot be combined with `source_id`.
+                 */
+                finished_since?: string;
                 limit?: number;
+                /** @description Only the Enrichments of this Run or Import, such as the one a Run started with `auto_enrich`. */
+                source_id?: string;
             };
             header?: never;
             path?: never;
@@ -4608,6 +4657,112 @@ export interface operations {
             };
             /** @description Item not found in this enrichment */
             404: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The organization rate limit was exceeded */
+            429: {
+                headers: {
+                    /** @description Seconds to wait before retrying, when the server can calculate the delay */
+                    "Retry-After"?: number;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description A required upstream service is unavailable */
+            503: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request exceeded the server time limit */
+            504: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    export_items: {
+        parameters: {
+            query: {
+                enrichment_id: string;
+                format?: components["schemas"]["ExportFormat"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Binary file download (Parquet or JSONL). In curl, use `-o items.parquet` to save to disk. */
+            200: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Missing or invalid enrichment_id */
+            400: {
+                headers: {
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description The Bearer authentication challenge */
+                    "WWW-Authenticate"?: string;
+                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
+                    "x-request-id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The credential or organization lacks access to this operation */
+            403: {
                 headers: {
                     /** @description Request identifier, also returned as error.request_id; include it when contacting support */
                     "x-request-id"?: string;
@@ -7971,8 +8126,13 @@ export interface operations {
     list_runs: {
         parameters: {
             query?: {
-                /** @description Opaque forward-only cursor returned as `next_cursor`. */
+                /** @description Opaque forward-only cursor returned as `next_cursor`; keep `finished_since` unchanged. */
                 cursor?: string;
+                /**
+                 * @description Only Runs that finished at or after this time, oldest finish first. Without it, all
+                 *     Runs, newest first.
+                 */
+                finished_since?: string;
                 limit?: number;
             };
             header?: never;

@@ -31,6 +31,7 @@ from .._http import SyncHTTP
 from .._pagination import Paginator
 from .._resource import Resource
 from .._streaming import BinaryStream
+from .explore import Timestamp
 
 CHUNK_SIZE = 1024 * 1024
 
@@ -139,14 +140,23 @@ class Runs(Resource):
 
     @operation("list_runs")
     def list(
-        self, *, limit: int | None = None, cursor: str | None = None
+        self,
+        *,
+        finished_since: Timestamp | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
     ) -> Paginator[RunPage, RunSummary]:
+        """Lists Runs, newest first.
+
+        With `finished_since`, lists only the Runs finished at or after that time, oldest finish
+        first: pass the last `finished_at` you processed to pick up what finished since.
+        """
         return Paginator(
             self._http,
             "list_runs",
             RunPage,
             items="data",
-            params={"limit": limit, "cursor": cursor},
+            params={"finished_since": finished_since, "limit": limit, "cursor": cursor},
         )
 
     @operation("get_run")

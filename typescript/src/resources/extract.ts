@@ -97,6 +97,10 @@ export class Runs extends Resource {
     );
   }
 
+  /**
+   * Lists Runs, newest first. With `finished_since`, lists only the Runs finished at or after
+   * that time, oldest finish first: pass the last `finished_at` you processed.
+   */
   list(
     query: QueryParams<'list_runs'> = {},
     options: CallOptions = {},

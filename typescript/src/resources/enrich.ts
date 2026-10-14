@@ -1,3 +1,4 @@
+import { BinaryResponse } from '../core/binary.js';
 import type { HTTP } from '../core/http.js';
 import { Paginator } from '../core/pagination.js';
 import { type JobOptions, Resource, type WaitOptions } from '../core/resource.js';
@@ -27,6 +28,11 @@ export class Enrichments extends Resource {
     );
   }
 
+  /**
+   * Lists Enrichments, newest first. `source_id` keeps the Enrichments of one Run or Import;
+   * `finished_since` keeps only those finished at or after that time, oldest finish first. The
+   * two cannot be combined.
+   */
   list(
     query: QueryParams<'list_enrichments'> = {},
     options: CallOptions = {},
@@ -57,5 +63,13 @@ export class Items extends Resource {
 
   get(itemId: string, query: QueryParams<'get_item'>, options: CallOptions = {}): Promise<Item> {
     return this.http.request('get_item', { path: { item_id: itemId }, query, ...options });
+  }
+
+  /** Streams every Item of an Enrichment as Parquet (default) or JSON Lines. */
+  async export(
+    query: QueryParams<'export_items'>,
+    options: CallOptions = {},
+  ): Promise<BinaryResponse> {
+    return new BinaryResponse(await this.http.send('export_items', { query, ...options }));
   }
 }

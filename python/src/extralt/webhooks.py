@@ -59,7 +59,12 @@ class RunWebhookEvent(_Event):
 
 
 class EnrichmentWebhookEvent(_Event):
-    type: Literal["enrichment.completed", "enrichment.stopped", "enrichment.failed"]
+    """`enrichment.changes` summarizes what the Enrichment found in `data.changes`: price
+    decreases and increases, stock changes, Listings added and removed, and new lows."""
+
+    type: Literal[
+        "enrichment.completed", "enrichment.stopped", "enrichment.failed", "enrichment.changes"
+    ]
     data: Enrichment
 
 
