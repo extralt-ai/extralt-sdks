@@ -1970,7 +1970,6 @@ export interface components {
              * @example invalid_request
              */
             code: string;
-            details?: components["schemas"]["ErrorDetails"] | null;
             /**
              * @description Human-readable description safe to show to an API consumer.
              * @example limit must be between 1 and 100
@@ -1981,13 +1980,6 @@ export interface components {
              * @example 01a12010-39ba-7554-811a-b5aa5bca777a
              */
             request_id: string;
-        };
-        ErrorDetails: {
-            /**
-             * @description Canonical URL to use when the requested URL redirects.
-             * @example https://www.example-store.com/
-             */
-            corrected_url?: string | null;
         };
         ErrorResponse: {
             error: components["schemas"]["ErrorBody"];
@@ -3185,13 +3177,10 @@ export interface components {
             host: string;
             /** @example jd7c4hq2zr8m1v6x9t3k5n0wbe2f7ays */
             id: string;
-            /**
-             * @description The language of the store page the Robot was created from, which its
-             *     build extracts in.
-             */
-            language: components["schemas"]["LanguageCode"];
+            language?: components["schemas"]["LanguageCode"] | null;
             /** @example example-store_com_US */
             name: string;
+            refusal?: components["schemas"]["RobotRefusal"] | null;
             /**
              * Format: int64
              * @example 4
@@ -3219,6 +3208,12 @@ export interface components {
              */
             next_cursor?: string | null;
         };
+        /**
+         * @description Why a Robot's build refused its store before building it. The Robot is
+         *     `failed`, and `status_reason` says why in words.
+         * @enum {string}
+         */
+        RobotRefusal: "not_store" | "unknown_language" | "unreachable" | "off_site_redirect" | "needs_scale" | "duplicate" | "unavailable";
         /**
          * @example completed
          * @enum {string}
@@ -3869,7 +3864,6 @@ export type EntityLifecycle = components['schemas']['EntityLifecycle'];
 export type EntityLookup = components['schemas']['EntityLookup'];
 export type EntityMatch = components['schemas']['EntityMatch'];
 export type ErrorBody = components['schemas']['ErrorBody'];
-export type ErrorDetails = components['schemas']['ErrorDetails'];
 export type ErrorResponse = components['schemas']['ErrorResponse'];
 export type ExploreActivity = components['schemas']['ExploreActivity'];
 export type ExploreFacets = components['schemas']['ExploreFacets'];
@@ -3933,6 +3927,7 @@ export type ReviewSignal = components['schemas']['ReviewSignal'];
 export type Robot = components['schemas']['Robot'];
 export type RobotCreateParams = components['schemas']['RobotCreateParams'];
 export type RobotPage = components['schemas']['RobotPage'];
+export type RobotRefusal = components['schemas']['RobotRefusal'];
 export type RobotStatus = components['schemas']['RobotStatus'];
 export type Run = components['schemas']['Run'];
 export type RunCreateParams = components['schemas']['RunCreateParams'];
@@ -7722,18 +7717,7 @@ export interface operations {
                     "application/json": components["schemas"]["Robot"];
                 };
             };
-            /** @description Robot created and ready, reusing an earlier build of the same store */
-            201: {
-                headers: {
-                    /** @description Request identifier, also returned as error.request_id; include it when contacting support */
-                    "x-request-id"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Robot"];
-                };
-            };
-            /** @description Robot created and build queued */
+            /** @description Robot created, or a failed one built again: its build checks the store first, and a refused store fails the Robot with a `refusal` */
             202: {
                 headers: {
                     /** @description Request identifier, also returned as error.request_id; include it when contacting support */
@@ -7823,7 +7807,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The page is not an online store, or its language can't be determined */
+            /** @description The JSON body does not match the expected schema */
             422: {
                 headers: {
                     /** @description Request identifier, also returned as error.request_id; include it when contacting support */
@@ -7858,7 +7842,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The store couldn't be checked; retry later */
+            /** @description A required upstream service is unavailable */
             503: {
                 headers: {
                     /** @description Request identifier, also returned as error.request_id; include it when contacting support */

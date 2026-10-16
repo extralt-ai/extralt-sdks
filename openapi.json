@@ -3146,17 +3146,6 @@
             ],
             "type": "string"
           },
-          "details": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/ErrorDetails",
-                "description": "Optional machine-readable context for handling the error."
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "message": {
             "description": "Human-readable description safe to show to an API consumer.",
             "examples": [
@@ -3177,21 +3166,6 @@
           "message",
           "request_id"
         ],
-        "type": "object"
-      },
-      "ErrorDetails": {
-        "properties": {
-          "corrected_url": {
-            "description": "Canonical URL to use when the requested URL redirects.",
-            "examples": [
-              "https://www.example-store.com/"
-            ],
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
         "type": "object"
       },
       "ErrorResponse": {
@@ -6448,14 +6422,32 @@
             "type": "string"
           },
           "language": {
-            "$ref": "#/components/schemas/LanguageCode",
-            "description": "The language of the store page the Robot was created from, which its\nbuild extracts in."
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LanguageCode",
+                "description": "The language of the store page the Robot was created from, which its\nbuild extracts in. Null until the build has checked the store."
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "name": {
             "examples": [
               "example-store_com_US"
             ],
             "type": "string"
+          },
+          "refusal": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RobotRefusal",
+                "description": "Set when the build refused the store; the Robot is then `failed`."
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "run_count": {
             "examples": [
@@ -6490,7 +6482,6 @@
           "name",
           "host",
           "country",
-          "language",
           "status",
           "finished",
           "run_count",
@@ -6540,6 +6531,19 @@
           "data"
         ],
         "type": "object"
+      },
+      "RobotRefusal": {
+        "description": "Why a Robot's build refused its store before building it. The Robot is\n`failed`, and `status_reason` says why in words.",
+        "enum": [
+          "not_store",
+          "unknown_language",
+          "unreachable",
+          "off_site_redirect",
+          "needs_scale",
+          "duplicate",
+          "unavailable"
+        ],
+        "type": "string"
       },
       "RobotStatus": {
         "enum": [
@@ -8069,7 +8073,7 @@
   "info": {
     "description": "Stable v1 API for extraction, enrichment, and ecommerce intelligence. Authentication is required for every API endpoint using an organization-bound Bearer API key. Mutating create/restart operations require an Idempotency-Key header.\n\nCompatible agents can use the same customer-facing capabilities through [Extralt MCP](https://extralt.com/docs/guides/using-mcp). MCP uses OAuth and publishes tool schemas separately from this REST contract.\n\n[Back to extralt.com](https://extralt.com)",
     "title": "Extralt API",
-    "version": "1.30.0"
+    "version": "1.31.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -15499,24 +15503,6 @@
               }
             }
           },
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Robot"
-                }
-              }
-            },
-            "description": "Robot created and ready, reusing an earlier build of the same store",
-            "headers": {
-              "x-request-id": {
-                "description": "Request identifier, also returned as error.request_id; include it when contacting support",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
           "202": {
             "content": {
               "application/json": {
@@ -15525,7 +15511,7 @@
                 }
               }
             },
-            "description": "Robot created and build queued",
+            "description": "Robot created, or a failed one built again: its build checks the store first, and a refused store fails the Robot with a `refusal`",
             "headers": {
               "x-request-id": {
                 "description": "Request identifier, also returned as error.request_id; include it when contacting support",
@@ -15675,7 +15661,7 @@
                 }
               }
             },
-            "description": "The page is not an online store, or its language can't be determined",
+            "description": "The JSON body does not match the expected schema",
             "headers": {
               "x-request-id": {
                 "description": "Request identifier, also returned as error.request_id; include it when contacting support",
@@ -15735,7 +15721,7 @@
                 }
               }
             },
-            "description": "The store couldn't be checked; retry later",
+            "description": "A required upstream service is unavailable",
             "headers": {
               "x-request-id": {
                 "description": "Request identifier, also returned as error.request_id; include it when contacting support",

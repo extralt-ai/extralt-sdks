@@ -455,14 +455,29 @@ class EntityMatch(BaseModel):
     removed: Annotated[bool, Field(examples=[False])]
 
 
-class ErrorDetails(BaseModel):
+class ErrorBody(BaseModel):
     model_config = ConfigDict(
         extra="allow",
     )
-    corrected_url: Annotated[str | None, Field(examples=["https://www.example-store.com/"])] = None
+    code: Annotated[str, Field(examples=["invalid_request"])]
     """
-    Canonical URL to use when the requested URL redirects.
+    Stable machine-readable error code.
     """
+    message: Annotated[str, Field(examples=["limit must be between 1 and 100"])]
+    """
+    Human-readable description safe to show to an API consumer.
+    """
+    request_id: Annotated[str, Field(examples=["01a12010-39ba-7554-811a-b5aa5bca777a"])]
+    """
+    Correlates the response with server logs and the `x-request-id` header.
+    """
+
+
+class ErrorResponse(BaseModel):
+    model_config = ConfigDict(
+        extra="allow",
+    )
+    error: ErrorBody
 
 
 class ExploreOverviewTotals(BaseModel):
@@ -978,6 +993,24 @@ class RobotCreateParams(BaseModel):
     url: Annotated[str, Field(examples=["https://www.example-store.com"])]
 
 
+RobotRefusal = TypeAliasType(
+    "RobotRefusal",
+    Literal[
+        "not_store",
+        "unknown_language",
+        "unreachable",
+        "off_site_redirect",
+        "needs_scale",
+        "duplicate",
+        "unavailable",
+    ],
+)
+"""
+Why a Robot's build refused its store before building it. The Robot is
+`failed`, and `status_reason` says why in words.
+"""
+
+
 RobotStatus = TypeAliasType(
     "RobotStatus",
     Annotated[Literal["pending", "building", "completed", "failed"], Field(examples=["completed"])],
@@ -1449,32 +1482,6 @@ class EntityLookup(BaseModel):
     """
 
 
-class ErrorBody(BaseModel):
-    model_config = ConfigDict(
-        extra="allow",
-    )
-    code: Annotated[str, Field(examples=["invalid_request"])]
-    """
-    Stable machine-readable error code.
-    """
-    details: ErrorDetails | None = None
-    message: Annotated[str, Field(examples=["limit must be between 1 and 100"])]
-    """
-    Human-readable description safe to show to an API consumer.
-    """
-    request_id: Annotated[str, Field(examples=["01a12010-39ba-7554-811a-b5aa5bca777a"])]
-    """
-    Correlates the response with server logs and the `x-request-id` header.
-    """
-
-
-class ErrorResponse(BaseModel):
-    model_config = ConfigDict(
-        extra="allow",
-    )
-    error: ErrorBody
-
-
 class ExploreActivity(BaseModel):
     model_config = ConfigDict(
         extra="allow",
@@ -1814,12 +1821,9 @@ class Robot(BaseModel):
     """
     host: Annotated[str, Field(examples=["www.example-store.com"])]
     id: Annotated[str, Field(examples=["jd7c4hq2zr8m1v6x9t3k5n0wbe2f7ays"])]
-    language: LanguageCode
-    """
-    The language of the store page the Robot was created from, which its
-    build extracts in.
-    """
+    language: LanguageCode | None = None
     name: Annotated[str, Field(examples=["example-store_com_US"])]
+    refusal: RobotRefusal | None = None
     run_count: Annotated[int, Field(examples=[4], ge=0)]
     status: RobotStatus
     status_reason: Annotated[str | None, Field(examples=[None])] = None
