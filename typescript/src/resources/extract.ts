@@ -50,10 +50,11 @@ export class Extract {
 
 export class Robots extends Resource {
   /**
-   * Creates a Robot for a store and country, or returns the existing one, once it is built. A new
-   * Robot is ready at once when an earlier build of the same store exists; otherwise the call
-   * waits for its build and throws `JobFailedError` if the build fails. Pass `wait: false` to
-   * return the queued Robot.
+   * Creates a Robot for a store and country, or returns the existing one, once it is built. The
+   * build checks the store first and reuses an earlier build of the same store, which finishes
+   * within seconds. The call waits for it and throws `JobFailedError` if it fails, including when
+   * it refuses the store: the Robot's `refusal` then says why. Pass `wait: false` to return the
+   * queued Robot.
    */
   create(params: RobotCreateParams, options: JobOptions = {}): Promise<Robot> {
     return this.startJob('Robot', 'get_robot', options, (request) =>
