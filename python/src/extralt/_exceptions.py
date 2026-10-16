@@ -51,7 +51,6 @@ class APIStatusError(ExtraltError):
     status_code: int
     code: str | None
     request_id: str | None
-    details: dict[str, Any] | None
 
     def __init__(
         self,
@@ -60,7 +59,6 @@ class APIStatusError(ExtraltError):
         response: httpx.Response,
         code: str | None,
         request_id: str | None,
-        details: dict[str, Any] | None,
     ) -> None:
         super().__init__(message)
         self.message = message
@@ -68,7 +66,6 @@ class APIStatusError(ExtraltError):
         self.status_code = response.status_code
         self.code = code
         self.request_id = request_id
-        self.details = details
 
     def __str__(self) -> str:
         parts = [f"{self.status_code}"]
@@ -175,11 +172,9 @@ def status_error(response: httpx.Response) -> APIStatusError:
     error_class = STATUS_ERRORS.get(response.status_code) or (
         InternalServerError if response.status_code >= 500 else APIStatusError
     )
-    details = envelope.get("details")
     return error_class(
         str(message),
         response=response,
         code=envelope.get("code"),
         request_id=request_id,
-        details=details if isinstance(details, dict) else None,
     )

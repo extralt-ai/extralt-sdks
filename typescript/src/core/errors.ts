@@ -20,7 +20,6 @@ interface ErrorEnvelope {
   code?: string;
   message?: string;
   request_id?: string;
-  details?: Record<string, unknown> | null;
 }
 
 /** The API answered with an error status and its stable error envelope. */
@@ -29,7 +28,6 @@ export class APIStatusError extends ExtraltError {
   readonly status: number;
   readonly code: string | undefined;
   readonly requestId: string | undefined;
-  readonly details: Record<string, unknown> | undefined;
   readonly headers: Headers;
 
   constructor(status: number, headers: Headers, envelope: ErrorEnvelope, fallback: string) {
@@ -41,7 +39,6 @@ export class APIStatusError extends ExtraltError {
     this.status = status;
     this.code = envelope.code;
     this.requestId = requestId;
-    this.details = envelope.details ?? undefined;
     this.headers = headers;
   }
 }

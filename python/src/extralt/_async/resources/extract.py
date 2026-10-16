@@ -59,9 +59,10 @@ class AsyncRobots(AsyncResource):
     ) -> Robot:
         """Creates a Robot for a store and country, or returns the existing one, once it is built.
 
-        A new Robot is ready at once when an earlier build of the same store exists; otherwise
-        the call waits for its build, up to `timeout` seconds (one hour by default), and raises
-        `JobFailedError` if the build fails. Pass `wait=False` to return the queued Robot.
+        The build checks the store first and reuses an earlier build of the same store, which
+        finishes within seconds. The call waits for it, up to `timeout` seconds (one hour by
+        default), and raises `JobFailedError` if it fails, including when it refuses the store:
+        the Robot's `refusal` then says why. Pass `wait=False` to return the queued Robot.
         """
         return await self._start(
             "create_robot",

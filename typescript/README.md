@@ -73,6 +73,8 @@ polls with backoff and resolves with it finished, within one hour or the `timeou
 
 - A job that ends as `failed` rejects with `JobFailedError`, with the job in `.resource`. A job
   that was stopped is returned.
+- A Robot whose build refuses its store, for example a page that doesn't sell online, ends as
+  `failed` with the kind of refusal in `refusal` and the reason in `status_reason`.
 - When the time runs out, `WaitTimeoutError` carries the job in `.resource`. The job keeps
   running on Extralt, and `wait()` with its id resumes waiting.
 - A Run needs a `budget`: the most Captures to produce, or `'unlimited'` to crawl until the store
