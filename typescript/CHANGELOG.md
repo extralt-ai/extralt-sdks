@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0](https://github.com/extralt-ai/extralt-sdks/compare/typescript-v0.3.0...typescript-v0.4.0) (2026-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* Robot refusals and a nullable Robot language ([#22](https://github.com/extralt-ai/extralt-sdks/issues/22))
+
+### Features
+
+* Robot refusals and a nullable Robot language ([#22](https://github.com/extralt-ai/extralt-sdks/issues/22)) ([5c86218](https://github.com/extralt-ai/extralt-sdks/commit/5c862181e2157ba8d612c503bf872163d0ec8137))
+
 ## [0.3.0](https://github.com/extralt-ai/extralt-sdks/compare/typescript-v0.2.0...typescript-v0.3.0) (2026-10-14)
 
 
