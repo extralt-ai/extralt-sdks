@@ -1,6 +1,6 @@
 [project]
 name = "extralt"
-version = "0.3.0"
+version = "0.4.0"
 description = "Python client for the Extralt API"
 readme = "README.md"
 license = "MIT"
